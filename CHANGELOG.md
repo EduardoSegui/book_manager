@@ -1,5 +1,13 @@
 # Registro de Cambios (Changelog)
 
+## Dia 24/09/2026
+## [Ejercicio 02]
+- Definición de las clases entidad del sistema: Libro, Genero, Editorial, Moneda, TipoCotizacion, Precio, Stock y CotizacionDolar.
+- Implementación de los modelos con Pydantic para la validación automática de datos (tipos, restricciones y reglas de negocio).
+- Creación de la clase base EntidadBase con el identificador común para todas las entidades.
+- Uso de atributos privados, propiedades de solo lectura y métodos controlados para aplicar encapsulación.
+- Instalación de Pydantic en el entorno virtual y actualización de requirements.txt.
+
 ## Dia 21/09/2026
 ## [Ejercicio 01]
 - Inicialización y configuración de la herramienta de versionado.
