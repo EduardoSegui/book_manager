@@ -1,5 +1,17 @@
 # Registro de Cambios (Changelog)
 
+## Dia 29/09/2026
+## [Ejercicio 06]
+- Creación de la interfaz de consola (console.py) con menús interactivos para todas las entidades.
+- Implementación del menú principal con acceso a los 8 módulos de gestión.
+- CRUD completo para Géneros, Editoriales, Monedas y Tipos de Cotización.
+- CRUD completo para Libros con funcionalidades adicionales: búsqueda, alta/baja lógica.
+- CRUD completo para Precios con cotización cruzada entre monedas.
+- CRUD completo para Stock con ingresos/egresos, consultas de stock bajo y valor de inventario.
+- CRUD completo para Cotizaciones del Dólar con conversión de moneda.
+- Validación de datos de entrada y manejo de errores con mensajes al usuario.
+- Navegación por menús con confirmaciones para operaciones destructivas.
+
 ## Dia 28/09/2026
 ## [Ejercicio 05]
 - Creación de archivos CSV en migrations/csv con datos de precarga para todas las entidades del sistema.
