@@ -1,5 +1,19 @@
 # Registro de Cambios (Changelog)
 
+## Dia 27/09/2026
+## [Ejercicio 04]
+- Definición de la interfaz abstracta IServicio[T] con el contrato CRUD de los servicios de catálogo.
+- Creación de la clase base ServicioBase con el CRUD genérico y puntos de extensión (_validar_creacion, _validar_actualizacion, _validar_eliminacion y campos únicos declarativos) para evitar duplicar el CRUD en cada servicio.
+- Implementación de los servicios ServicioGenero, ServicioEditorial, ServicioMoneda, ServicioTipoCotizacion, ServicioLibro, ServicioPrecio, ServicioStock y ServicioCotizacionDolar.
+- Inyección de dependencias de los repositorios en cada servicio para mantener la separación entre la lógica de negocio y la persistencia.
+- Validación de las relaciones entre entidades: existencia de editorial, géneros, libro, moneda y tipo de cotización referenciados.
+- Validación de unicidad de nombres de género, editorial, tipo de cotización y de código y nombre de moneda, sin distinguir mayúsculas.
+- Protección de la integridad referencial al eliminar: se bloquea la baja de géneros, editoriales y tipos de cotización en uso, y de libros con precios o stock asociado.
+- Validación de unicidad del ISBN de los libros y de baja lógica del catálogo mediante dar_de_baja y dar_de_alta.
+- Gestión de ingresos y egresos de unidades de stock, control de stock bajo y sin disponibilidad.
+- Lógica de conversión de moneda a partir de la cotización del dólar (USD/ARS) y cálculo del valor del inventario según el tipo de cotización y la fecha indicados.
+- Type hints y docstrings en todas las clases y métodos públicos.
+
 ## Dia 26/09/2026
 ## [Ejercicio 03]
 - Definición de las interfaces abstractas IRepositorio[T], IRepositorioStock e IRepositorioCotizacionDolar con sus respectivos contratos CRUD.
