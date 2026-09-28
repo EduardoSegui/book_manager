@@ -1,5 +1,15 @@
 # Registro de Cambios (Changelog)
 
+## Dia 28/09/2026
+## [Ejercicio 05]
+- Creación de archivos CSV en migrations/csv con datos de precarga para todas las entidades del sistema.
+- Archivos generados: generos.csv, editoriales.csv, monedas.csv, tipos_cotizacion.csv, libros.csv, precios.csv, stock.csv y cotizaciones_dolar.csv.
+- Cada entidad cuenta con un mínimo de 10 registros (12 registros por entidad, 20 precios).
+- Implementación del módulo preload_data.py con funciones de carga para cada entidad.
+- Función principal cargar_todos_los_datos que orquesta la importación completa desde los CSV hacia los repositorios.
+- Manejo de tipos de datos: parseo de fechas ISO, valores decimales y listas de IDs separados por comas.
+- Verificación exitosa de la precarga: todos los registros se cargaron correctamente en los repositorios.
+
 ## Dia 27/09/2026
 ## [Ejercicio 04]
 - Definición de la interfaz abstracta IServicio[T] con el contrato CRUD de los servicios de catálogo.
