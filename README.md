@@ -13,3 +13,21 @@ El objetivo es desarrollar una aplicación de consola (CLI) robusta en Python qu
 - Ejercicio 03: Definición de las clases responsables de la persistencia de datos (repositorios con CRUD completo). ✓
 - Ejercicio 04: Definición de las clases responsables de la lógica de negocio (servicios). ✓
 - Ejercicio 05: Creación de archivos para la importación de datos (CSV con precarga). ✓
+- Ejercicio 06: Interfaz de consola con los CRUD de todas las entidades. ✓
+- Ejercicio 07: Creación del archivo main.py que se encarga de ejecutar el sistema. ✓
+
+## Ejecución
+
+Desde la raíz del repositorio, con el entorno virtual y `PYTHONPATH` apuntando a `src`:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m book_manager.main
+```
+
+El sistema se ejecuta con los datos de precarga cargados desde `migrations/csv`. Para iniciarlo con los repositorios vacíos:
+
+```bash
+PYTHONPATH=src .venv/bin/python -c "from book_manager.main import main; main(import_default_data=False)"
+```
+
+Los repositorios trabajan en memoria, por lo que los datos no se persisten entre ejecuciones.

@@ -1,5 +1,14 @@
 # Registro de Cambios (Changelog)
 
+## Dia 30/09/2026
+## [Ejercicio 07]
+- Creación del archivo main.py como punto de entrada del sistema.
+- Funciones privadas para componer el sistema: _crear_repositorios y _crear_servicios.
+- Inyección de los repositorios en los servicios y armado de la Consola.
+- Función main(import_default_data: bool = True) con carga opcional de la precarga CSV.
+- Bloque if __name__ == "__main__" para permitir la ejecución directa del sistema.
+- Documentación en el README de los comandos de ejecución local del sistema.
+
 ## Dia 29/09/2026
 ## [Ejercicio 06]
 - Creación de la interfaz de consola (console.py) con menús interactivos para todas las entidades.
