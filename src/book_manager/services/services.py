@@ -66,6 +66,20 @@ def _exigir_unicidad(
             raise ValueError(f"Ya existe {etiqueta} con {campo} '{valor}'.")
 
 
+def _asignar_id_pendiente(entidad: T, existentes: List[T]) -> T:
+    """Asigna el siguiente identificador libre si la entidad aún no lo tiene.
+
+    Las altas construidas desde la consola usan ``id=0`` como marcador de
+    "identificador pendiente"; en ese caso se le asigna el siguiente
+    correlativo disponible. Si la entidad ya trae un identificador explícito
+    (por ejemplo, la precarga desde CSV) se respeta tal cual.
+    """
+    if entidad.id != 0:
+        return entidad
+    entidad.id = max((otra.id for otra in existentes), default=0) + 1
+    return entidad
+
+
 def _exigir_referencias(
     referencias: List[int],
     existe: Callable[[int], bool],
@@ -185,7 +199,8 @@ class ServicioBase(IServicio[T]):
         self._repositorio = repositorio
 
     def crear(self, entidad: T) -> T:
-        """Crea la entidad validando unicidad y reglas de negocio."""
+        """Crea la entidad asignándole ID y validando unicidad y reglas de negocio."""
+        _asignar_id_pendiente(entidad, self._repositorio.leer_todos())
         self._exigir_campos_unicos(entidad)
         self._validar_creacion(entidad)
         return self._repositorio.crear(entidad)
@@ -470,6 +485,7 @@ class ServicioCotizacionDolar:
 
     def crear(self, cotizacion: CotizacionDolar) -> CotizacionDolar:
         """Crea una cotización validando el tipo de cotización referenciado."""
+        _asignar_id_pendiente(cotizacion, self.leer_todos())
         self._exigir_existente(cotizacion.tipo_id)
         return self._repositorio.crear(cotizacion)
 
@@ -650,6 +666,7 @@ class ServicioStock:
 
     def crear(self, stock: Stock) -> Stock:
         """Crea un registro de stock validando el libro referenciado."""
+        _asignar_id_pendiente(stock, self.leer_todos())
         self._exigir_libro(stock.libro_id)
         return self._repositorio.crear(stock)
 
@@ -699,10 +716,8 @@ class ServicioStock:
         self._exigir_cantidad(cantidad, "ingresar")
         stock = self._repositorio.leer_por_libro(libro_id)
         if stock is None:
-            registros = self.leer_todos()
-            nuevo_id = max((registro.id for registro in registros), default=0) + 1
             return self.crear(
-                Stock(id=nuevo_id, libro_id=libro_id, cantidad=cantidad)
+                Stock(id=0, libro_id=libro_id, cantidad=cantidad)
             )
         stock.ajustar_cantidad(cantidad)
         return self._repositorio.actualizar(stock)

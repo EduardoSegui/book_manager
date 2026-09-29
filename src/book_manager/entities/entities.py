@@ -29,7 +29,14 @@ class EntidadBase(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    id: int = Field(ge=1, description="Identificador único de la entidad.")
+    id: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "Identificador único de la entidad. El valor 0 indica que el "
+            "identificador se asigna automáticamente al crear el registro."
+        ),
+    )
 
 
 class Genero(EntidadBase):
