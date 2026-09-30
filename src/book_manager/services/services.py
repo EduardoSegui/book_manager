@@ -514,6 +514,14 @@ class ServicioCotizacionDolar:
             key=lambda cotizacion: cotizacion.fecha,
         )
 
+    def leer_por_tipo_y_fecha(self, tipo_id: int, fecha: date) -> Optional[CotizacionDolar]:
+        """Devuelve la cotización de un tipo en una fecha específica."""
+        self._exigir_existente(tipo_id)
+        for cotizacion in self._repositorio.leer_historico_por_tipo(tipo_id):
+            if cotizacion.fecha == fecha:
+                return cotizacion
+        return None
+
     def ultima_cotizacion(self, tipo_id: int) -> Optional[CotizacionDolar]:
         """Devuelve la cotización más reciente cargada para un tipo."""
         return _cotizacion_aplicable(self._repositorio, tipo_id, None)
