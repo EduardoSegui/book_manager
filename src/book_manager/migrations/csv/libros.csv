@@ -1,0 +1,13 @@
+id,isbn,titulo,autor,anio_publicacion,editorial_id,generos_ids,descripcion
+1,9789500765432,Cien años de soledad,Gabriel García Márquez,1967,2,"1,8",Obra maestra del realismo mágico latinoamericano.
+2,9788420471839,El amor en los tiempos del cólera,Gabriel García Márquez,1985,2,1,Historia de amor que trasciende el tiempo.
+3,9789500765449,Crónica de una muerte anunciada,Gabriel García Márquez,1981,2,1,Relato basado en un hecho real ocurrido en Colombia.
+4,9788437604947,Don Quijote de la Mancha,Miguel de Cervantes,1605,3,1,Novela clásica de la literatura española.
+5,9788466332103,La sombra del viento,Carlos Ruiz Zafón,2001,4,1, Misterio y romance en la Barcelona de posguerra.
+6,9788490628825,El juego del ángel,Carlos Ruiz Zafón,2008,4,1,Novela gótica ambientada en la Barcelona de los años 20.
+7,9788401337208,La ciudad de las bestias,Isabel Allende,2002,5,8,Aventura en la selva amazónica.
+8,9788401337215,El reino de este mundo,Alejo Carpentier,1949,2,1,Historia de la revolución haitiana.
+9,9789500765456,Ficciones,Jorge Luis Borges,1944,2,1,Colección de cuentos de literatura fantástica.
+10,9789500765463,El aleph,Jorge Luis Borges,1949,2,1,Obra cuentística fundamental del autor.
+11,9788420471846,Rayuela,Julio Cortázar,1963,2,1,Novela experimental de estructura no lineal.
+12,9788420471853,Bestiario,Julio Cortázar,1951,2,1,Colección de cuentos del autor argentino.

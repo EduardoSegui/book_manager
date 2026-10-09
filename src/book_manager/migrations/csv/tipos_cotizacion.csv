@@ -1,0 +1,13 @@
+id,nombre,descripcion
+1,Oficial,Cotización oficial del dólar emitida por el Banco Central.
+2,Blue,Cotización del dólar en el mercado informal o paralelo.
+3,MEP,Cotización del dólar mediante el Mercado Electrónico de Pagos.
+4,CCL,Cotización del dólar Contado con Liquidación.
+5,Tarjeta,Cotización del dólar para compras con tarjeta de crédito.
+6,Turista,Cotización del dólar para gastos turísticos en el exterior.
+7,Ahorro,Cotización del dólar para ahorro personal con cupo.
+8,Soja,Cotización del dólar vinculada a la exportación de soja.
+9,Cepa,Cotización del dólar para operaciones de cambio por CEP.
+10,Bolsa,Cotización del dólar en el mercado de valores.
+11,Mayorista,Cotización del dólar para operaciones mayoristas.
+12,Minorista,Cotización del dólar para operaciones minoristas.
