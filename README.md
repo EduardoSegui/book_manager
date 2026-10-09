@@ -1,20 +1,24 @@
-# Book Manager - Sprint 1
+# Book Manager - Sprint 2
 
 ## Objetivo
 El objetivo principal de este proyecto es aplicar los conocimientos adquiridos en programación orientada a objetos, almacenamiento de datos en archivos para su persistencia.
 
 ## Introducción y Contexto del problema
-Una librería con venta al público necesita modernizar su sistema de gestión de inventario de libros. Debido a la fluctuación en los costos de importación de material bibliográfico, el sistema debe gestionar precios en diferentes monedas y seguir de cerca la cotización del dólar para actualizar sus valores en tiempo real.
-El objetivo es desarrollar una aplicación de consola (CLI) robusta en Python que permita gestionar el inventario de una librería, cotizar los libros en tiempo real según el valor del dólar y comparar precios automáticamente con la competencia web.
+A partir del Sprint 1 (aplicación de consola que gestiona el inventario de una librería persistiendo en archivos), en este Sprint 2 se amplía el alcance haciendo que la aplicación persista en una base de datos relacional mediante el ORM SQLAlchemy.
+
+La idea principal es realizar una migración de todos los datos cargados en los archivos (CSV) a tablas relacionales, consolidando las bases del manejo de bases de datos, la normalización, la conexión segura y la carga inicial.
+
+Además se realizan consultas a APIs externas (cotizaciones del dólar) para registrar las cotizaciones en la base de datos.
 
 ## Estado del Sprint
-- Ejercicio 01: Inicialización y configuración de la herramienta de versionado. ✓
-- Ejercicio 02: Definición de las clases entidad (Libro, Genero, Editorial, Moneda, TipoCotizacion, Precio, Stock, CotizacionDolar). ✓
-- Ejercicio 03: Definición de las clases responsables de la persistencia de datos (repositorios con CRUD completo). ✓
-- Ejercicio 04: Definición de las clases responsables de la lógica de negocio (servicios). ✓
-- Ejercicio 05: Creación de archivos para la importación de datos (CSV con precarga). ✓
-- Ejercicio 06: Interfaz de consola con los CRUD de todas las entidades. ✓
-- Ejercicio 07: Creación del archivo main.py que se encarga de ejecutar el sistema. ✓
+- Ejercicio 01: Inicialización y configuración de la herramienta de versionado (rama `Sprint_2`). ✓
+- Ejercicio 02: Clase `ConexionDB` para la conexión con SQLAlchemy. ⏳
+- Ejercicio 03: Context manager para manejar las transacciones a la base de datos. ⏳
+- Ejercicio 04: Creación de las tablas del sistema con tipos de datos y relaciones. ⏳
+- Ejercicio 05: Migración de datos (CSV → SQL). ⏳
+- Ejercicio 06: Modificaciones para que todo el sistema utilice base de datos. ⏳
+- Ejercicio 07: API del dólar + dotenv. ⏳
+- Ejercicio 08: Nuevas opciones de menú (cotizaciones por API, precios bimonetarios, exportación CSV). ⏳
 
 ## Ejecución
 
@@ -30,4 +34,4 @@ El sistema se ejecuta con los datos de precarga cargados desde `migrations/csv`.
 PYTHONPATH=src .venv/bin/python -c "from book_manager.main import main; main(import_default_data=False)"
 ```
 
-Los repositorios trabajan en memoria, por lo que los datos no se persisten entre ejecuciones.
+> El Sprint 2 reemplaza la persistencia en archivos por la base de datos relacional (SQLite + SQLAlchemy), cuya implementación se completa a lo largo de los ejercicios 02 a 08.

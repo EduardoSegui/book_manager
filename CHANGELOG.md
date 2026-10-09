@@ -1,5 +1,12 @@
 # Registro de Cambios (Changelog)
 
+## Dia 09/10/2026
+## [Ejercicio 01]
+- Inicialización y configuración del versionado para el Sprint 2.
+- Creación de la rama `Sprint_2` partiendo de `Sprint_1` y push al repositorio remoto.
+- Actualización del README con el objetivo, contexto y estado del Sprint 2.
+- Se respeta el formato de commits `Día X: <comentario>` y los archivos puntuales (sin `git add .`).
+
 ## Dia 30/09/2026
 ## [Ejercicio 07]
 - Creación del archivo main.py como punto de entrada del sistema.
