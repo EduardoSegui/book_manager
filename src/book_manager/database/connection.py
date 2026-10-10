@@ -8,10 +8,14 @@ import os
 from contextlib import contextmanager
 from typing import Generator
 
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from book_manager.models.models import Base
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 
 class ConexionDB:

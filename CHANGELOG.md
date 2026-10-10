@@ -1,8 +1,14 @@
 # Registro de Cambios (Changelog)
 
+## Dia 10/10/2026
+## [Ejercicio 02]
+- Creación de la clase ConexionDB en connection.py para el manejo de conexiones con SQLAlchemy.
+- Configuración de dependencias actualizadas en requirements.txt para correr el ejercicio 2.
+
 ## Dia 09/10/2026
 ## [Ejercicio 01]
 - Inicialización y configuración del versionado para el Sprint 2.
+- Creación de las carpetas de base de datos (database), modelos (models) y scripts SQL (migrations/sql).
 - Creación de la rama `Sprint_2` partiendo de `Sprint_1` y push al repositorio remoto.
 - Actualización del README con el objetivo, contexto y estado del Sprint 2.
 - Se respeta el formato de commits `Día X: <comentario>` y los archivos puntuales (sin `git add .`).
