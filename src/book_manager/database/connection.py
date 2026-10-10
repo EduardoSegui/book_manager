@@ -2,6 +2,7 @@
 """Configuración de la conexión a la base de datos con SQLAlchemy.
 
 Ejercicio 02: Clase ConexionDB para la conexión con SQLAlchemy.
+Ejercicio 03: Context manager para manejar transacciones a la base de datos.
 """
 
 import os

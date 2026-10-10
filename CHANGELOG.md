@@ -1,5 +1,9 @@
 # Registro de Cambios (Changelog)
 
+## Dia 11/10/2026
+## [Ejercicio 03]
+- Implementación de un context manager (`ConexionDB.sesion`) en connection.py para manejar de forma segura las transacciones de base de datos (commit, rollback automático y cierre).
+
 ## Dia 10/10/2026
 ## [Ejercicio 02]
 - Creación de la clase ConexionDB en connection.py para el manejo de conexiones con SQLAlchemy.
