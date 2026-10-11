@@ -1,0 +1,14 @@
+-- Migración de la tabla libros
+
+INSERT INTO libros (id, isbn, titulo, autor, anio_publicacion, editorial_id, descripcion, activo) VALUES (1, '9789500765432', 'Cien años de soledad', 'Gabriel García Márquez', 1967, 2, 'Obra maestra del realismo mágico latinoamericano.', TRUE);
+INSERT INTO libros (id, isbn, titulo, autor, anio_publicacion, editorial_id, descripcion, activo) VALUES (2, '9788420471839', 'El amor en los tiempos del cólera', 'Gabriel García Márquez', 1985, 2, 'Historia de amor que trasciende el tiempo.', TRUE);
+INSERT INTO libros (id, isbn, titulo, autor, anio_publicacion, editorial_id, descripcion, activo) VALUES (3, '9789500765449', 'Crónica de una muerte anunciada', 'Gabriel García Márquez', 1981, 2, 'Relato basado en un hecho real ocurrido en Colombia.', TRUE);
+INSERT INTO libros (id, isbn, titulo, autor, anio_publicacion, editorial_id, descripcion, activo) VALUES (4, '9788437604947', 'Don Quijote de la Mancha', 'Miguel de Cervantes', 1605, 3, 'Novela clásica de la literatura española.', TRUE);
+INSERT INTO libros (id, isbn, titulo, autor, anio_publicacion, editorial_id, descripcion, activo) VALUES (5, '9788466332103', 'La sombra del viento', 'Carlos Ruiz Zafón', 2001, 4, ' Misterio y romance en la Barcelona de posguerra.', TRUE);
+INSERT INTO libros (id, isbn, titulo, autor, anio_publicacion, editorial_id, descripcion, activo) VALUES (6, '9788490628825', 'El juego del ángel', 'Carlos Ruiz Zafón', 2008, 4, 'Novela gótica ambientada en la Barcelona de los años 20.', TRUE);
+INSERT INTO libros (id, isbn, titulo, autor, anio_publicacion, editorial_id, descripcion, activo) VALUES (7, '9788401337208', 'La ciudad de las bestias', 'Isabel Allende', 2002, 5, 'Aventura en la selva amazónica.', TRUE);
+INSERT INTO libros (id, isbn, titulo, autor, anio_publicacion, editorial_id, descripcion, activo) VALUES (8, '9788401337215', 'El reino de este mundo', 'Alejo Carpentier', 1949, 2, 'Historia de la revolución haitiana.', TRUE);
+INSERT INTO libros (id, isbn, titulo, autor, anio_publicacion, editorial_id, descripcion, activo) VALUES (9, '9789500765456', 'Ficciones', 'Jorge Luis Borges', 1944, 2, 'Colección de cuentos de literatura fantástica.', TRUE);
+INSERT INTO libros (id, isbn, titulo, autor, anio_publicacion, editorial_id, descripcion, activo) VALUES (10, '9789500765463', 'El aleph', 'Jorge Luis Borges', 1949, 2, 'Obra cuentística fundamental del autor.', TRUE);
+INSERT INTO libros (id, isbn, titulo, autor, anio_publicacion, editorial_id, descripcion, activo) VALUES (11, '9788420471846', 'Rayuela', 'Julio Cortázar', 1963, 2, 'Novela experimental de estructura no lineal.', TRUE);
+INSERT INTO libros (id, isbn, titulo, autor, anio_publicacion, editorial_id, descripcion, activo) VALUES (12, '9788420471853', 'Bestiario', 'Julio Cortázar', 1951, 2, 'Colección de cuentos del autor argentino.', TRUE);

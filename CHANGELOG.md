@@ -1,6 +1,24 @@
 # Registro de Cambios (Changelog)
 
 ## Dia 11/10/2026
+## [Ejercicio 05]
+- Creación del módulo migrations.py con la función `migrar_datos(carpeta_csvs, carpeta_sqls)`.
+- Lectura de los archivos CSV del TP1 y migración de los datos a la base de datos relacional (SQLAlchemy).
+- Generación de los archivos `.sql` con las sentencias INSERT en migrations/sql (un archivo por tabla).
+- Poblado de las tablas en orden respetando las claves foráneas: generos, editoriales, monedas, tipos_cotizacion, libros, libro_genero, precios, stock y cotizaciones_dolar.
+- Derivación de la tabla de asociación `libro_genero` a partir de la columna `generos_ids` de libros.csv.
+- Migración idempotente: las tablas se vacían (en orden inverso por FK) antes de volver a cargar los datos.
+- Escape seguro de literales SQL y manejo de valores nulos, booleanos, fechas y decimales.
+
+## [Ejercicio 04]
+- Creación de los modelos ORM de SQLAlchemy en models.py con la clase base declarativa `Base`.
+- Definición de las tablas del sistema con sus tipos de datos y relaciones: `generos`, `editoriales`, `monedas`, `tipos_cotizacion`, `libros`, `precios`, `stock` y `cotizaciones_dolar`.
+- Tabla de asociación `libro_genero` para la relación muchos a muchos entre `Libro` y `Genero`.
+- Claves foráneas con reglas de integridad referencial (`CASCADE` y `RESTRICT`) y relaciones bidireccionales con `relationship`.
+- Restricción de unicidad `UniqueConstraint(tipo_id, fecha)` en `cotizaciones_dolar` (una cotización por tipo y fecha).
+- Uso de tipos adecuados por columna: `String`, `Integer`, `Boolean`, `Date`, `Numeric`, incluyendo `Numeric(12, 2)` para precios y `Numeric(12, 4)` para cotizaciones.
+- Tipos anotados con `Mapped`/`mapped_column` y type hints en todas las clases.
+
 ## [Ejercicio 03]
 - Implementación de un context manager (`ConexionDB.sesion`) en connection.py para manejar de forma segura las transacciones de base de datos (commit, rollback automático y cierre).
 

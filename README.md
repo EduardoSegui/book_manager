@@ -12,10 +12,10 @@ Además se realizan consultas a APIs externas (cotizaciones del dólar) para reg
 
 ## Estado del Sprint
 - Ejercicio 01: Inicialización y configuración de la herramienta de versionado (rama `Sprint_2`). ✓
-- Ejercicio 02: Clase `ConexionDB` para la conexión con SQLAlchemy. ⏳
-- Ejercicio 03: Context manager para manejar las transacciones a la base de datos. ⏳
-- Ejercicio 04: Creación de las tablas del sistema con tipos de datos y relaciones. ⏳
-- Ejercicio 05: Migración de datos (CSV → SQL). ⏳
+- Ejercicio 02: Clase `ConexionDB` para la conexión con SQLAlchemy. ✓
+- Ejercicio 03: Context manager para manejar las transacciones a la base de datos. ✓
+- Ejercicio 04: Creación de las tablas del sistema con tipos de datos y relaciones. ✓
+- Ejercicio 05: Migración de datos (CSV → SQL) y poblado de la base. ✓
 - Ejercicio 06: Modificaciones para que todo el sistema utilice base de datos. ⏳
 - Ejercicio 07: API del dólar + dotenv. ⏳
 - Ejercicio 08: Nuevas opciones de menú (cotizaciones por API, precios bimonetarios, exportación CSV). ⏳
@@ -33,5 +33,15 @@ El sistema se ejecuta con los datos de precarga cargados desde `migrations/csv`.
 ```bash
 PYTHONPATH=src .venv/bin/python -c "from book_manager.main import main; main(import_default_data=False)"
 ```
+
+## Migración de datos (Ejercicio 05)
+
+Para migrar los CSV del TP1 a la base de datos y generar los scripts `.sql`:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m book_manager.migrations.migrations
+```
+
+Los archivos `.sql` se generan en `src/book_manager/migrations/sql` y los datos se cargan en la base indicada por `DATABASE_URL`.
 
 > El Sprint 2 reemplaza la persistencia en archivos por la base de datos relacional (SQLite + SQLAlchemy), cuya implementación se completa a lo largo de los ejercicios 02 a 08.
