@@ -1,5 +1,17 @@
 # Registro de Cambios (Changelog)
 
+## Dia 12/10/2026
+
+## [Ejercicio 06]
+- Modificación de todos los repositorios para que el sistema persista en la base de datos relacional mediante SQLAlchemy (ya no en memoria).
+- Creación de `RepositorioBase(IRepositorio[T], Generic[T, M])` que concentra el CRUD (`crear`, `leer_por_id`, `leer_todos`, `actualizar`, `eliminar`) y la sesión de `ConexionDB`.
+- Traducción automática entre entidades de dominio (Pydantic) y modelos ORM por coincidencia de columnas (`_entidad_desde_orm`, `_copiar_a_orm`).
+- `RepositorioLibro` resuelve la relación muchos a muchos con géneros (`libro_genero`) y restaura el estado de alta (`activo`) al leer/escribir.
+- `RepositorioStock` y `RepositorioCotizacionDolar` implementan el acceso especializado por `libro_id` y por `tipo_id` + `fecha` con consultas SQLAlchemy.
+- `crear` con escritura idempotente (si el ID ya existe, actualiza), lo que permite precargar CSV sobre una base ya migrada sin duplicar registros.
+- Manejo de errores de integridad: las violaciones de unicidad/restricciones se traducen a `ValueError` con mensajes claros para el usuario.
+- `main` ahora crea las tablas antes de iniciar y cierra la conexión al finalizar (finally).
+
 ## Dia 11/10/2026
 ## [Ejercicio 05]
 - Creación del módulo migrations.py con la función `migrar_datos(carpeta_csvs, carpeta_sqls)`.

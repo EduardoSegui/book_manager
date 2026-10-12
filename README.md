@@ -16,7 +16,7 @@ Además se realizan consultas a APIs externas (cotizaciones del dólar) para reg
 - Ejercicio 03: Context manager para manejar las transacciones a la base de datos. ✓
 - Ejercicio 04: Creación de las tablas del sistema con tipos de datos y relaciones. ✓
 - Ejercicio 05: Migración de datos (CSV → SQL) y poblado de la base. ✓
-- Ejercicio 06: Modificaciones para que todo el sistema utilice base de datos. ⏳
+- Ejercicio 06: Repositorios con persistencia en la base de datos (SQLAlchemy). ✓
 - Ejercicio 07: API del dólar + dotenv. ⏳
 - Ejercicio 08: Nuevas opciones de menú (cotizaciones por API, precios bimonetarios, exportación CSV). ⏳
 

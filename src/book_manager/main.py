@@ -6,6 +6,7 @@ Se encargar de armar la composición del sistema (repositorios, servicios y
 consola) y de ponerlo en marcha.
 """
 
+from book_manager.database.connection import ConexionDB
 from book_manager.preload_data.preload_data import cargar_todos_los_datos
 from book_manager.repositories.repositories import (
     RepositorioCotizacionDolar,
@@ -90,6 +91,7 @@ def main(import_default_data: bool = True) -> None:
         import_default_data: Si es True, precarga los datos de los archivos CSV
             de migrations/csv antes de iniciar la consola.
     """
+    ConexionDB.crear_tablas()
     repos = _crear_repositorios()
 
     if import_default_data:
@@ -108,7 +110,10 @@ def main(import_default_data: bool = True) -> None:
         for entidad, cantidad in resultados.items():
             print(f"  - {entidad}: {cantidad}")
 
-    _crear_servicios(repos).ejecutar()
+    try:
+        _crear_servicios(repos).ejecutar()
+    finally:
+        ConexionDB.cerrar()
 
 
 if __name__ == "__main__":
