@@ -1,5 +1,16 @@
 # Registro de Cambios (Changelog)
 
+## Dia 13/10/2026
+
+## [Ejercicio 07]
+- Creación y configuración del archivo `.env` en la raíz del proyecto para definir la URL del endpoint de la API (`API_URL=https://dolarapi.com/v1/dolares`) y la URL de conexión a la base de datos (`DATABASE_URL`).
+- Carga de variables de entorno mediante `python-dotenv` para mantener desacoplada la configuración y evitar datos sensibles en el código fuente.
+- Implementación de la función y método `obtener_cotizaciones` dentro de `ServicioCotizacionDolar` en `services.py` para consultar la API externa de Dólar Argentina (`dolarapi.com`), descargar las cotizaciones actualizadas y persistirlas en la base de datos relacional.
+- Mapeo automático de los tipos de cotización devueltos por la API (`Oficial`, `Blue`, `Bolsa`, `Contado con liquidación`/`CCL`, `Tarjeta`, `Mayorista`) con las entidades de la base de datos, resolviendo sinónimos y dando de alta nuevos tipos si fuera necesario (por ejemplo `Cripto`).
+- Validación de datos de cotización: parseo de fechas ISO asegurando que no sean futuras, valores numéricos de compra y venta mayores a cero, y consistencia de que el valor de venta sea mayor o igual al de compra.
+- Persistencia idempotente: actualización de cotizaciones ya existentes para una misma fecha y tipo, e inserción de nuevos registros cuando no existen previamente.
+- Manejo robusto de errores de red, HTTP y formato con mensajes descriptivos (`ValueError`) para el usuario.
+
 ## Dia 12/10/2026
 
 ## [Ejercicio 06]

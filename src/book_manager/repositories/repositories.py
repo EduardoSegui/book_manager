@@ -535,6 +535,13 @@ class RepositorioCotizacionDolar(IRepositorioCotizacionDolar):
                 if cotizacion.id else None
             )
             if registro is None:
+                registro = sesion.scalar(
+                    select(orm.CotizacionDolar).where(
+                        orm.CotizacionDolar.tipo_id == cotizacion.tipo_id,
+                        orm.CotizacionDolar.fecha == cotizacion.fecha,
+                    )
+                )
+            if registro is None:
                 registro = _copiar_a_orm(orm.CotizacionDolar(), cotizacion)
                 sesion.add(registro)
             else:

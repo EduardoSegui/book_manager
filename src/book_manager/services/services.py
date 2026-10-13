@@ -7,9 +7,14 @@ y la persistencia se delega a la capa de repositorios.
 """
 
 import abc
+import json
+import os
+import urllib.request
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Callable, Generic, List, Optional, TypeVar
+
+from dotenv import load_dotenv
 
 from book_manager.entities.entities import (
     CotizacionDolar,
@@ -26,6 +31,9 @@ from book_manager.repositories.repositories import (
     IRepositorio,
     IRepositorioCotizacionDolar,
     IRepositorioStock,
+    RepositorioCotizacionDolar,
+    RepositorioMoneda,
+    RepositorioTipoCotizacion,
 )
 
 T = TypeVar("T", bound=EntidadBase)
@@ -566,6 +574,156 @@ class ServicioCotizacionDolar:
                 return moneda
         raise ValueError(f"La moneda '{codigo}' no está registrada en el sistema.")
 
+    def obtener_cotizaciones(
+        self, api_url: Optional[str] = None
+    ) -> List[CotizacionDolar]:
+        """Busca, descarga y registra las cotizaciones del dólar desde la API.
+
+        Consulta el endpoint configurado en la variable de entorno API_URL (o
+        DOLAR_API_URL / valor por defecto) o el especificado por parámetro,
+        procesa las cotizaciones recibidas y las persiste en la base de datos
+        para la fecha correspondiente. Si la cotización ya existe para esa
+        fecha y tipo, actualiza los valores.
+
+        Args:
+            api_url (Optional[str]): URL alternativa de la API. Si no se
+                proporciona, se toma de la variable de entorno API_URL.
+
+        Returns:
+            List[CotizacionDolar]: Lista de cotizaciones registradas o
+                actualizadas en el sistema.
+
+        Raises:
+            ValueError: Si ocurre un error al conectar con la API, descargar
+                los datos o procesar la respuesta.
+        """
+        if not api_url:
+            load_dotenv()
+            api_url = (
+                os.getenv("API_URL")
+                or os.getenv("DOLAR_API_URL")
+                or "https://dolarapi.com/v1/dolares"
+            )
+
+        peticion = urllib.request.Request(
+            api_url,
+            headers={"User-Agent": "BookManager/1.0"},
+        )
+        try:
+            with urllib.request.urlopen(peticion, timeout=15) as respuesta:
+                contenido = respuesta.read().decode("utf-8")
+                datos = json.loads(contenido)
+        except Exception as error:
+            raise ValueError(
+                f"Error al consultar la API del dólar en '{api_url}': {error}"
+            ) from error
+
+        if not isinstance(datos, list):
+            raise ValueError(
+                "La respuesta de la API del dólar debe ser una lista de cotizaciones."
+            )
+
+        registradas: List[CotizacionDolar] = []
+        for item in datos:
+            if not isinstance(item, dict):
+                continue
+
+            nombre = str(item.get("nombre", "")).strip()
+            casa = str(item.get("casa", "")).strip()
+            compra_raw = item.get("compra")
+            venta_raw = item.get("venta")
+            fecha_raw = item.get("fechaActualizacion")
+
+            if compra_raw is None or venta_raw is None:
+                continue
+
+            try:
+                valor_compra = Decimal(str(compra_raw))
+                valor_venta = Decimal(str(venta_raw))
+            except Exception:
+                continue
+
+            if valor_compra <= Decimal("0") or valor_venta <= Decimal("0"):
+                continue
+
+            if valor_venta < valor_compra:
+                valor_venta = valor_compra
+
+            fecha = self._parsear_fecha_api(fecha_raw)
+            tipo = self._buscar_o_crear_tipo(nombre, casa)
+
+            existente = self._repositorio.leer_por_tipo_y_fecha(tipo.id, fecha)
+            if existente is not None:
+                cotizacion = CotizacionDolar(
+                    id=existente.id,
+                    tipo_id=tipo.id,
+                    fecha=fecha,
+                    valor_compra=valor_compra,
+                    valor_venta=valor_venta,
+                )
+                guardada = self.actualizar(cotizacion)
+            else:
+                cotizacion = CotizacionDolar(
+                    id=0,
+                    tipo_id=tipo.id,
+                    fecha=fecha,
+                    valor_compra=valor_compra,
+                    valor_venta=valor_venta,
+                )
+                guardada = self.crear(cotizacion)
+            registradas.append(guardada)
+
+        return registradas
+
+    def _parsear_fecha_api(self, fecha_raw: Optional[str]) -> date:
+        """Parsea la fecha devuelta por la API asegurando que no sea futura."""
+        if not fecha_raw:
+            return date.today()
+        try:
+            fecha_iso = str(fecha_raw).split("T")[0]
+            fecha = date.fromisoformat(fecha_iso)
+        except ValueError:
+            fecha = date.today()
+
+        if fecha > date.today():
+            fecha = date.today()
+        return fecha
+
+    def _buscar_o_crear_tipo(self, nombre: str, casa: str) -> TipoCotizacion:
+        """Busca el TipoCotizacion coincidente o lo crea si no existe."""
+        tipos = self._repositorio_tipo.leer_todos()
+        nombre_norm = _normalizar_texto(nombre)
+        casa_norm = _normalizar_texto(casa)
+
+        for tipo in tipos:
+            if _normalizar_texto(tipo.nombre) == nombre_norm:
+                return tipo
+
+        alias = {
+            "contadoconliqui": "ccl",
+            "bolsa": "bolsa",
+            "mep": "mep",
+            "oficial": "oficial",
+            "blue": "blue",
+            "tarjeta": "tarjeta",
+            "mayorista": "mayorista",
+            "cripto": "cripto",
+        }
+        alias_nombre = alias.get(casa_norm)
+        if alias_nombre:
+            for tipo in tipos:
+                if _normalizar_texto(tipo.nombre) == alias_nombre:
+                    return tipo
+
+        nombre_final = nombre if nombre else casa.capitalize()
+        nuevo_tipo = TipoCotizacion(
+            id=0,
+            nombre=nombre_final[:50],
+            descripcion=f"Cotización {nombre_final} obtenida vía API",
+        )
+        _asignar_id_pendiente(nuevo_tipo, tipos)
+        return self._repositorio_tipo.crear(nuevo_tipo)
+
 
 # --- Servicio de precios ---
 
@@ -799,3 +957,31 @@ class ServicioStock:
         """Valida que la cantidad a mover sea mayor a cero."""
         if cantidad <= 0:
             raise ValueError(f"La cantidad a {operacion} debe ser mayor a cero.")
+
+
+# --- Funciones de conveniencia a nivel de módulo ---
+
+def obtener_cotizaciones(
+    servicio: Optional[ServicioCotizacionDolar] = None,
+    api_url: Optional[str] = None,
+) -> List[CotizacionDolar]:
+    """Función de conveniencia para obtener cotizaciones de la API del dólar.
+
+    Delega en el método `obtener_cotizaciones` de `ServicioCotizacionDolar`.
+    Si no se suministra un servicio, crea una instancia utilizando los
+    repositorios con persistencia en base de datos.
+
+    Args:
+        servicio (Optional[ServicioCotizacionDolar]): Instancia del servicio.
+        api_url (Optional[str]): URL alternativa de la API.
+
+    Returns:
+        List[CotizacionDolar]: Lista de cotizaciones registradas en la base de datos.
+    """
+    if servicio is None:
+        servicio = ServicioCotizacionDolar(
+            repositorio=RepositorioCotizacionDolar(),
+            repositorio_tipo=RepositorioTipoCotizacion(),
+            repositorio_moneda=RepositorioMoneda(),
+        )
+    return servicio.obtener_cotizaciones(api_url=api_url)
