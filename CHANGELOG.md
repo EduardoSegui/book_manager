@@ -1,5 +1,15 @@
 # Registro de Cambios (Changelog)
 
+## Dia 14/10/2026
+
+## [Ejercicio 08]
+- Incorporación de nuevas opciones en la interfaz de consola (`console.py`) para interactuar con las cotizaciones de la API y reportes avanzados de precios.
+- Implementación de la opción de menú "Obtener las cotizaciones por api" en la gestión de cotizaciones y en la gestión de precios, conectada con `ServicioCotizacionDolar.obtener_cotizaciones`.
+- Implementación de la opción de menú "Ver la lista de precios bimonetaria de los libros" en la gestión de precios, permitiendo contrastar el precio en pesos (ARS) contra cualquier otra moneda secundaria seleccionada (por ejemplo USD) con cotización en tiempo real.
+- Implementación de la opción de menú "Exportar los precios a archivo CSV para todos los tipos de monedas" en la gestión de precios, generando un archivo CSV con los precios vigentes directos y cotizados para todas las monedas del sistema.
+- Incorporación de los métodos de lógica de negocio `lista_precios_bimonetaria` y `exportar_precios_csv` en `ServicioPrecio` (`services.py`), manteniendo el desacoplamiento entre la capa de presentación y la capa de servicios.
+- Validación de datos de entrada y captura de excepciones de negocio (`ValueError` y `OSError`) con mensajes claros y descriptivos para el usuario en la consola.
+
 ## Dia 13/10/2026
 
 ## [Ejercicio 07]

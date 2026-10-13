@@ -7,12 +7,13 @@ y la persistencia se delega a la capa de repositorios.
 """
 
 import abc
+import csv
 import json
 import os
 import urllib.request
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Callable, Generic, List, Optional, TypeVar
+from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar
 
 from dotenv import load_dotenv
 
@@ -785,6 +786,198 @@ class ServicioPrecio(ServicioBase[Precio]):
                 f"El tipo de cotización {tipo_id} no tiene cotizaciones cargadas."
             )
         return _convertir(precio.valor, cotizacion, origen.codigo, destino.codigo)
+
+    def lista_precios_bimonetaria(
+        self,
+        moneda_destino_id: int,
+        tipo_id: int,
+        fecha: Optional[date] = None,
+    ) -> List[Dict[str, Any]]:
+        """Genera la lista de precios bimonetaria de los libros (pesos y otra moneda).
+
+        Calcula para cada libro su precio vigente en pesos (ARS) y en la moneda
+        destino seleccionada, cotizando mediante el tipo de cotización si no
+        cuenta con precio directo cargado.
+
+        Args:
+            moneda_destino_id: ID de la moneda secundaria a comparar.
+            tipo_id: ID del tipo de cotización a aplicar.
+            fecha: Fecha opcional para la cotización histórica.
+
+        Returns:
+            List[Dict[str, Any]]: Lista de registros con el libro y los precios
+                en ambas monedas.
+
+        Raises:
+            ValueError: Si la moneda destino no existe o es ARS, o si el tipo
+                de cotización no existe.
+        """
+        destino = self._leer_moneda(moneda_destino_id)
+        if destino.codigo == CODIGO_MONEDA_BASE:
+            raise ValueError(
+                f"La moneda de comparación debe ser distinta de {CODIGO_MONEDA_BASE}."
+            )
+
+        moneda_base = next(
+            (m for m in self._repositorio_moneda.leer_todos()
+             if m.codigo == CODIGO_MONEDA_BASE),
+            None,
+        )
+        if moneda_base is None:
+            raise ValueError(
+                f"No se encuentra registrada la moneda base {CODIGO_MONEDA_BASE}."
+            )
+
+        cotizacion = _cotizacion_aplicable(
+            self._repositorio_cotizacion, tipo_id, fecha
+        )
+        if cotizacion is None:
+            raise ValueError(
+                f"El tipo de cotización {tipo_id} no tiene cotizaciones disponibles."
+            )
+
+        filas: List[Dict[str, Any]] = []
+        for libro in self._repositorio_libro.leer_todos():
+            precio_base = self.precio_vigente(libro.id, moneda_base.id)
+            precio_destino = self.precio_vigente(libro.id, destino.id)
+
+            valor_base = precio_base.valor if precio_base else None
+            valor_destino = precio_destino.valor if precio_destino else None
+            es_cotizado = False
+
+            if valor_destino is None and valor_base is not None:
+                try:
+                    valor_destino = _convertir(
+                        valor_base, cotizacion, moneda_base.codigo, destino.codigo
+                    )
+                    es_cotizado = True
+                except ValueError:
+                    valor_destino = None
+
+            filas.append({
+                "libro": libro,
+                "moneda_base": moneda_base,
+                "precio_base": valor_base,
+                "moneda_destino": destino,
+                "precio_destino": valor_destino,
+                "cotizado": es_cotizado,
+                "cotizacion": cotizacion,
+            })
+        return filas
+
+    def exportar_precios_csv(
+        self,
+        ruta_archivo: str,
+        tipo_id: Optional[int] = None,
+        fecha: Optional[date] = None,
+    ) -> int:
+        """Exporta los precios vigentes de los libros para todas las monedas a un archivo CSV.
+
+        Incluye tanto los precios directos como los calculados mediante conversión
+        de cotización si se especifica el tipo de cotización.
+
+        Args:
+            ruta_archivo: Ruta o nombre del archivo CSV a generar.
+            tipo_id: ID opcional del tipo de cotización para conversión.
+            fecha: Fecha opcional para la cotización.
+
+        Returns:
+            int: Cantidad de filas de precios exportadas.
+
+        Raises:
+            ValueError: Si no hay libros o monedas cargadas en el sistema.
+            OSError: Si ocurre un error al escribir el archivo.
+        """
+        libros = self._repositorio_libro.leer_todos()
+        monedas = self._repositorio_moneda.leer_todos()
+        if not libros:
+            raise ValueError("No hay libros registrados en el catálogo.")
+        if not monedas:
+            raise ValueError("No hay monedas registradas en el sistema.")
+
+        moneda_base = next(
+            (m for m in monedas if m.codigo == CODIGO_MONEDA_BASE), None
+        )
+        cotizacion = (
+            _cotizacion_aplicable(self._repositorio_cotizacion, tipo_id, fecha)
+            if tipo_id is not None
+            else None
+        )
+
+        carpeta = os.path.dirname(ruta_archivo)
+        if carpeta:
+            os.makedirs(carpeta, exist_ok=True)
+
+        contador = 0
+        with open(ruta_archivo, mode="w", newline="", encoding="utf-8") as f:
+            escritor = csv.writer(f)
+            escritor.writerow([
+                "libro_id",
+                "titulo",
+                "autor",
+                "isbn",
+                "moneda_id",
+                "codigo_moneda",
+                "nombre_moneda",
+                "simbolo",
+                "precio",
+                "tipo_precio",
+                "fecha",
+            ])
+
+            for libro in libros:
+                for moneda in monedas:
+                    precio_reg = self.precio_vigente(libro.id, moneda.id)
+                    if precio_reg is not None:
+                        escritor.writerow([
+                            libro.id,
+                            libro.titulo,
+                            libro.autor,
+                            libro.isbn,
+                            moneda.id,
+                            moneda.codigo,
+                            moneda.nombre,
+                            moneda.simbolo,
+                            f"{precio_reg.valor:.2f}",
+                            "Directo",
+                            str(precio_reg.fecha),
+                        ])
+                        contador += 1
+                    elif (
+                        moneda_base
+                        and cotizacion
+                        and moneda.codigo in (
+                            CODIGO_MONEDA_BASE, CODIGO_MONEDA_DOLAR
+                        )
+                    ):
+                        precio_base = self.precio_vigente(
+                            libro.id, moneda_base.id
+                        )
+                        if precio_base is not None:
+                            try:
+                                valor_cot = _convertir(
+                                    precio_base.valor,
+                                    cotizacion,
+                                    moneda_base.codigo,
+                                    moneda.codigo,
+                                )
+                                escritor.writerow([
+                                    libro.id,
+                                    libro.titulo,
+                                    libro.autor,
+                                    libro.isbn,
+                                    moneda.id,
+                                    moneda.codigo,
+                                    moneda.nombre,
+                                    moneda.simbolo,
+                                    f"{valor_cot:.2f}",
+                                    "Cotizado",
+                                    str(cotizacion.fecha),
+                                ])
+                                contador += 1
+                            except ValueError:
+                                pass
+        return contador
 
     def _leer_moneda(self, moneda_id: int) -> Moneda:
         """Devuelve la moneda registrada con ese ID o falla."""

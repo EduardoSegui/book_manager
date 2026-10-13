@@ -4,6 +4,7 @@
 Ejercicio 06: Interfaces gráficas del sistema que operan con los CRUD de cada clase.
 """
 
+import csv
 import os
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -635,6 +636,9 @@ class Consola:
         print("  4. Modificar precio")
         print("  5. Eliminar precio")
         print("  6. Cotizar precio de libro")
+        print("  7. Ver lista de precios bimonetaria")
+        print("  8. Exportar precios a archivo CSV")
+        print("  9. Obtener cotizaciones por API")
         print("  0. Volver")
 
         opcion = input("\nSeleccione una opción: ").strip()
@@ -651,6 +655,12 @@ class Consola:
             self._eliminar_precio()
         elif opcion == "6":
             self._cotizar_precio()
+        elif opcion == "7":
+            self._ver_lista_precios_bimonetaria()
+        elif opcion == "8":
+            self._exportar_precios_csv()
+        elif opcion == "9":
+            self._obtener_cotizaciones_api()
 
     def _listar_precios(self) -> None:
         """Lista todos los precios."""
@@ -740,6 +750,135 @@ class Consola:
                 print(f"\nPrecio cotizado: {resultado}")
         except ValueError as e:
             print(f"\nError: {e}")
+
+    def _ver_lista_precios_bimonetaria(self) -> None:
+        """Muestra la lista de precios de los libros en pesos y otra moneda seleccionada."""
+        self._mostrar_titulo("LISTA DE PRECIOS BIMONETARIA")
+        try:
+            monedas = self._servicio_moneda.leer_todos()
+            monedas_destino = [m for m in monedas if m.codigo != "ARS"]
+            if not monedas_destino:
+                print("\nNo hay monedas secundarias registradas en el sistema.")
+                return
+
+            print("Monedas disponibles para comparar:")
+            for m in monedas_destino:
+                print(f"  [{m.id}] {m.codigo} - {m.nombre} ({m.simbolo})")
+
+            id_moneda_destino = self._pedir_entero(
+                "\nID de la moneda secundaria a comparar: ", minimo=1
+            )
+
+            tipos_cot = self._servicio_tipo_cotizacion.leer_todos()
+            if not tipos_cot:
+                print("\nNo hay tipos de cotización registrados.")
+                return
+
+            print("\nTipos de cotización disponibles:")
+            for tc in tipos_cot:
+                print(f"  [{tc.id}] {tc.nombre}")
+
+            id_tipo = self._pedir_entero(
+                "\nID del tipo de cotización a aplicar: ", minimo=1
+            )
+            fecha = self._pedir_fecha(
+                "Fecha (YYYY-MM-DD, Enter para más reciente): "
+            )
+
+            filas = self._servicio_precio.lista_precios_bimonetaria(
+                moneda_destino_id=id_moneda_destino,
+                tipo_id=id_tipo,
+                fecha=fecha,
+            )
+
+            if not filas:
+                print("\nNo hay libros cargados en el catálogo.")
+                return
+
+            moneda_base = filas[0]["moneda_base"]
+            moneda_dest = filas[0]["moneda_destino"]
+            cot = filas[0]["cotizacion"]
+            tipo_obj = self._servicio_tipo_cotizacion.leer_por_id(id_tipo)
+            tipo_nombre = tipo_obj.nombre if tipo_obj else f"Tipo {id_tipo}"
+
+            print(f"\n{'─' * 70}")
+            print(
+                f"  PRECIOS BIMONETARIOS: {moneda_base.codigo} y {moneda_dest.codigo} "
+                f"(Cotización {tipo_nombre}: ${cot.valor_venta:.2f})"
+            )
+            print(f"{'─' * 70}")
+
+            for fila in filas:
+                libro = fila["libro"]
+                p_base = fila["precio_base"]
+                p_dest = fila["precio_destino"]
+                es_cot = fila["cotizado"]
+
+                txt_base = (
+                    f"{moneda_base.simbolo} {p_base:.2f}"
+                    if p_base is not None
+                    else "Sin precio"
+                )
+                if p_dest is not None:
+                    origen_txt = "Cotizado" if es_cot else "Directo"
+                    txt_dest = f"{moneda_dest.simbolo} {p_dest:.2f} ({origen_txt})"
+                else:
+                    txt_dest = "Sin precio"
+
+                print(f"  [{libro.id}] {libro.titulo} - {libro.autor}")
+                print(
+                    f"       {moneda_base.codigo}: {txt_base} | "
+                    f"{moneda_dest.codigo}: {txt_dest}"
+                )
+
+        except ValueError as e:
+            print(f"\nError: {e}")
+
+    def _exportar_precios_csv(self) -> None:
+        """Exporta los precios de los libros para todos los tipos de monedas a CSV."""
+        self._mostrar_titulo("EXPORTAR PRECIOS A ARCHIVO CSV")
+        try:
+            ruta = self._pedir_texto(
+                "Ruta o nombre del archivo CSV (Enter para 'precios_monedas.csv'): ",
+                obligatorio=False,
+            )
+            if not ruta:
+                ruta = "precios_monedas.csv"
+
+            tipos_cot = self._servicio_tipo_cotizacion.leer_todos()
+            id_tipo = None
+            if tipos_cot:
+                tipo_defecto = next(
+                    (tc for tc in tipos_cot
+                     if tc.nombre.strip().casefold() == "blue"),
+                    tipos_cot[0],
+                )
+                print(
+                    f"\nTipos de cotización disponibles (defecto: [{tipo_defecto.id}] {tipo_defecto.nombre}):"
+                )
+                for tc in tipos_cot:
+                    print(f"  [{tc.id}] {tc.nombre}")
+                id_tipo_texto = self._pedir_texto(
+                    f"ID del tipo de cotización (Enter para '{tipo_defecto.nombre}'): ",
+                    obligatorio=False,
+                )
+                id_tipo = int(id_tipo_texto) if id_tipo_texto else tipo_defecto.id
+
+            fecha = self._pedir_fecha(
+                "Fecha para cotizaciones (YYYY-MM-DD, Enter para más reciente): "
+            )
+
+            total = self._servicio_precio.exportar_precios_csv(
+                ruta_archivo=ruta,
+                tipo_id=id_tipo,
+                fecha=fecha,
+            )
+            print(
+                f"\nPrecios exportados exitosamente a '{ruta}' "
+                f"({total} registros generados)."
+            )
+        except (ValueError, OSError) as e:
+            print(f"\nError al exportar precios: {e}")
 
     # ------------------------------------------------------------------
     # Gestión de Stock
@@ -877,6 +1016,7 @@ class Consola:
         print("  5. Modificar cotización")
         print("  6. Eliminar cotización")
         print("  7. Convertir moneda")
+        print("  8. Obtener cotizaciones por API")
         print("  0. Volver")
 
         opcion = input("\nSeleccione una opción: ").strip()
@@ -895,6 +1035,8 @@ class Consola:
             self._eliminar_cotizacion()
         elif opcion == "7":
             self._convertir_moneda()
+        elif opcion == "8":
+            self._obtener_cotizaciones_api()
 
     def _listar_cotizaciones(self) -> None:
         """Lista todas las cotizaciones."""
@@ -1011,3 +1153,22 @@ class Consola:
             print(f"\n{valor} {moneda_origen} = {resultado} {moneda_destino}")
         except ValueError as e:
             print(f"\nError: {e}")
+
+    def _obtener_cotizaciones_api(self) -> None:
+        """Obtiene y registra las cotizaciones del dólar desde la API."""
+        self._mostrar_titulo("OBTENER COTIZACIONES POR API")
+        try:
+            print("Consultando cotizaciones desde la API del dólar...")
+            cotizaciones = self._servicio_cotizacion.obtener_cotizaciones()
+            print(
+                f"\nSe obtuvieron y registraron {len(cotizaciones)} cotizaciones exitosamente:"
+            )
+            for cot in cotizaciones:
+                tipo = self._servicio_tipo_cotizacion.leer_por_id(cot.tipo_id)
+                nombre_tipo = tipo.nombre if tipo else f"Tipo {cot.tipo_id}"
+                print(
+                    f"  - {nombre_tipo:<22} Compra: ${cot.valor_compra:>8.2f} | "
+                    f"Venta: ${cot.valor_venta:>8.2f} | Fecha: {cot.fecha}"
+                )
+        except ValueError as e:
+            print(f"\nError al obtener cotizaciones: {e}")
