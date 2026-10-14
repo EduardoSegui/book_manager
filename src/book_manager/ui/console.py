@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Interfaz de consola del sistema Book Manager.
 
-Ejercicio 06: Interfaces gráficas del sistema que operan con los CRUD de cada clase.
+Ejercicio 06: Interfaces gráficas del sistema que operan con CRUDs.
 """
 
 import os
@@ -66,7 +66,11 @@ class Consola:
 
         while True:
             self._mostrar_menu_principal()
-            opcion = input("\nSeleccione una opción: ").strip()
+            try:
+                opcion = input("\nSeleccione una opción: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print("\n\nEntrada no disponible. Cerrando Book Manager.")
+                break
 
             if opcion == "0":
                 print("\nGracias por usar Book Manager. ¡Hasta luego!")
@@ -90,7 +94,11 @@ class Consola:
             else:
                 print("\nOpción no válida. Intente nuevamente.")
 
-            input("\nPresione Enter para continuar...")
+            try:
+                input("\nPresione Enter para continuar...")
+            except (EOFError, KeyboardInterrupt):
+                print("\n\nEntrada no disponible. Cerrando Book Manager.")
+                break
             self._limpiar_pantalla()
 
     # ------------------------------------------------------------------
@@ -112,7 +120,11 @@ class Consola:
             print("Este campo es obligatorio.")
 
     @staticmethod
-    def _pedir_entero(mensaje: str, minimo: Optional[int] = None, maximo: Optional[int] = None) -> int:
+    def _pedir_entero(
+        mensaje: str,
+        minimo: Optional[int] = None,
+        maximo: Optional[int] = None,
+    ) -> int:
         """Pide un número entero al usuario."""
         while True:
             try:
@@ -216,7 +228,8 @@ class Consola:
     def _listar_generos(self) -> None:
         """Lista todos los géneros."""
         generos = self._servicio_genero.leer_todos()
-        self._mostrar_lista(generos, lambda g: f"[{g.id}] {g.nombre} - {g.descripcion}")
+        self._mostrar_lista(
+            generos, lambda g: f"[{g.id}] {g.nombre} - {g.descripcion}")
 
     def _crear_genero(self) -> None:
         """Crea un nuevo género."""
@@ -232,7 +245,8 @@ class Consola:
     def _modificar_genero(self) -> None:
         """Modifica un género existente."""
         try:
-            id_genero = self._pedir_entero("ID del género a modificar: ", minimo=1)
+            id_genero = self._pedir_entero(
+                "ID del género a modificar: ", minimo=1)
             genero = self._servicio_genero.leer_por_id(id_genero)
             if genero is None:
                 print(f"\nNo existe un género con el ID {id_genero}.")
@@ -241,19 +255,21 @@ class Consola:
             print(f"\nNombre actual: {genero.nombre}")
             nombre = self._pedir_texto("Nuevo nombre: ")
             print(f"Descripción actual: {genero.descripcion}")
-            descripcion = self._pedir_texto("Nueva descripción: ", obligatorio=False)
+            descripcion = self._pedir_texto(
+                "Nueva descripción: ", obligatorio=False)
 
             genero.nombre = nombre
             genero.descripcion = descripcion
             self._servicio_genero.actualizar(genero)
-            print(f"\nGénero modificado exitosamente.")
+            print("\nGénero modificado exitosamente.")
         except ValueError as e:
             print(f"\nError: {e}")
 
     def _eliminar_genero(self) -> None:
         """Elimina un género."""
         try:
-            id_genero = self._pedir_entero("ID del género a eliminar: ", minimo=1)
+            id_genero = self._pedir_entero(
+                "ID del género a eliminar: ", minimo=1)
             if self._confirmar("¿Está seguro de eliminar este género?"):
                 if self._servicio_genero.eliminar(id_genero):
                     print("\nGénero eliminado exitosamente.")
@@ -304,7 +320,8 @@ class Consola:
     def _modificar_editorial(self) -> None:
         """Modifica una editorial existente."""
         try:
-            id_editorial = self._pedir_entero("ID de la editorial a modificar: ", minimo=1)
+            id_editorial = self._pedir_entero(
+                "ID de la editorial a modificar: ", minimo=1)
             editorial = self._servicio_editorial.leer_por_id(id_editorial)
             if editorial is None:
                 print(f"\nNo existe una editorial con el ID {id_editorial}.")
@@ -315,19 +332,21 @@ class Consola:
 
             editorial.nombre = nombre
             self._servicio_editorial.actualizar(editorial)
-            print(f"\nEditorial modificada exitosamente.")
+            print("\nEditorial modificada exitosamente.")
         except ValueError as e:
             print(f"\nError: {e}")
 
     def _eliminar_editorial(self) -> None:
         """Elimina una editorial."""
         try:
-            id_editorial = self._pedir_entero("ID de la editorial a eliminar: ", minimo=1)
+            id_editorial = self._pedir_entero(
+                "ID de la editorial a eliminar: ", minimo=1)
             if self._confirmar("¿Está seguro de eliminar esta editorial?"):
                 if self._servicio_editorial.eliminar(id_editorial):
                     print("\nEditorial eliminada exitosamente.")
                 else:
-                    print(f"\nNo existe una editorial con el ID {id_editorial}.")
+                    print(
+                        f"\nNo existe una editorial con el ID {id_editorial}.")
         except ValueError as e:
             print(f"\nError: {e}")
 
@@ -358,7 +377,10 @@ class Consola:
     def _listar_monedas(self) -> None:
         """Lista todas las monedas."""
         monedas = self._servicio_moneda.leer_todos()
-        self._mostrar_lista(monedas, lambda m: f"[{m.id}] {m.codigo} - {m.nombre} ({m.simbolo})")
+        self._mostrar_lista(
+            monedas,
+            lambda m: f"[{m.id}] {m.codigo} - {m.nombre} ({m.simbolo})",
+        )
 
     def _crear_moneda(self) -> None:
         """Crea una nueva moneda."""
@@ -366,7 +388,8 @@ class Consola:
             codigo = self._pedir_texto("Código ISO (ej: ARS, USD): ").upper()
             nombre = self._pedir_texto("Nombre de la moneda: ")
             simbolo = self._pedir_texto("Símbolo (ej: $, US$): ")
-            moneda = Moneda(id=0, codigo=codigo, nombre=nombre, simbolo=simbolo)
+            moneda = Moneda(id=0, codigo=codigo,
+                            nombre=nombre, simbolo=simbolo)
             self._servicio_moneda.crear(moneda)
             print(f"\nMoneda '{nombre}' creada exitosamente.")
         except ValueError as e:
@@ -375,7 +398,8 @@ class Consola:
     def _modificar_moneda(self) -> None:
         """Modifica una moneda existente."""
         try:
-            id_moneda = self._pedir_entero("ID de la moneda a modificar: ", minimo=1)
+            id_moneda = self._pedir_entero(
+                "ID de la moneda a modificar: ", minimo=1)
             moneda = self._servicio_moneda.leer_por_id(id_moneda)
             if moneda is None:
                 print(f"\nNo existe una moneda con el ID {id_moneda}.")
@@ -392,14 +416,15 @@ class Consola:
             moneda.nombre = nombre
             moneda.simbolo = simbolo
             self._servicio_moneda.actualizar(moneda)
-            print(f"\nMoneda modificada exitosamente.")
+            print("\nMoneda modificada exitosamente.")
         except ValueError as e:
             print(f"\nError: {e}")
 
     def _eliminar_moneda(self) -> None:
         """Elimina una moneda."""
         try:
-            id_moneda = self._pedir_entero("ID de la moneda a eliminar: ", minimo=1)
+            id_moneda = self._pedir_entero(
+                "ID de la moneda a eliminar: ", minimo=1)
             if self._confirmar("¿Está seguro de eliminar esta moneda?"):
                 if self._servicio_moneda.eliminar(id_moneda):
                     print("\nMoneda eliminada exitosamente.")
@@ -435,7 +460,8 @@ class Consola:
     def _listar_tipos_cotizacion(self) -> None:
         """Lista todos los tipos de cotización."""
         tipos = self._servicio_tipo_cotizacion.leer_todos()
-        self._mostrar_lista(tipos, lambda t: f"[{t.id}] {t.nombre} - {t.descripcion}")
+        self._mostrar_lista(
+            tipos, lambda t: f"[{t.id}] {t.nombre} - {t.descripcion}")
 
     def _crear_tipo_cotizacion(self) -> None:
         """Crea un nuevo tipo de cotización."""
@@ -451,33 +477,43 @@ class Consola:
     def _modificar_tipo_cotizacion(self) -> None:
         """Modifica un tipo de cotización existente."""
         try:
-            id_tipo = self._pedir_entero("ID del tipo de cotización a modificar: ", minimo=1)
+            id_tipo = self._pedir_entero(
+                "ID del tipo de cotización a modificar: ", minimo=1)
             tipo = self._servicio_tipo_cotizacion.leer_por_id(id_tipo)
             if tipo is None:
-                print(f"\nNo existe un tipo de cotización con el ID {id_tipo}.")
+                print(
+                    f"\nNo existe un tipo de cotización con el ID {id_tipo}.")
                 return
 
             print(f"\nNombre actual: {tipo.nombre}")
             nombre = self._pedir_texto("Nuevo nombre: ")
             print(f"Descripción actual: {tipo.descripcion}")
-            descripcion = self._pedir_texto("Nueva descripción: ", obligatorio=False)
+            descripcion = self._pedir_texto(
+                "Nueva descripción: ", obligatorio=False)
 
             tipo.nombre = nombre
             tipo.descripcion = descripcion
             self._servicio_tipo_cotizacion.actualizar(tipo)
-            print(f"\nTipo de cotización modificado exitosamente.")
+            print("\nTipo de cotización modificado exitosamente.")
         except ValueError as e:
             print(f"\nError: {e}")
 
     def _eliminar_tipo_cotizacion(self) -> None:
         """Elimina un tipo de cotización."""
         try:
-            id_tipo = self._pedir_entero("ID del tipo de cotización a eliminar: ", minimo=1)
-            if self._confirmar("¿Está seguro de eliminar este tipo de cotización?"):
+            id_tipo = self._pedir_entero(
+                "ID del tipo de cotización a eliminar: ", minimo=1
+            )
+            if self._confirmar(
+                "¿Está seguro de eliminar este tipo de cotización?"
+            ):
                 if self._servicio_tipo_cotizacion.eliminar(id_tipo):
                     print("\nTipo de cotización eliminado exitosamente.")
                 else:
-                    print(f"\nNo existe un tipo de cotización con el ID {id_tipo}.")
+                    print(
+                        f"\nNo existe un tipo de cotización con el ID "
+                        f"{id_tipo}."
+                    )
         except ValueError as e:
             print(f"\nError: {e}")
 
@@ -517,7 +553,11 @@ class Consola:
     def _listar_libros(self) -> None:
         """Lista todos los libros."""
         libros = self._servicio_libro.leer_todos()
-        self._mostrar_lista(libros, lambda l: f"[{l.id}] {l.titulo} - {l.autor} (ISBN: {l.isbn})")
+        self._mostrar_lista(
+            libros,
+            lambda libro: f"[{libro.id}] {libro.titulo} - {libro.autor} "
+            f"(ISBN: {libro.isbn})",
+        )
 
     def _buscar_libro(self) -> None:
         """Busca un libro por título, autor o ISBN."""
@@ -526,7 +566,11 @@ class Consola:
         if not libros:
             print("\nNo se encontraron libros.")
             return
-        self._mostrar_lista(libros, lambda l: f"[{l.id}] {l.titulo} - {l.autor} (ISBN: {l.isbn})")
+        self._mostrar_lista(
+            libros,
+            lambda libro: f"[{libro.id}] {libro.titulo} - {libro.autor} "
+            f"(ISBN: {libro.isbn})",
+        )
 
     def _crear_libro(self) -> None:
         """Crea un nuevo libro."""
@@ -536,8 +580,12 @@ class Consola:
             autor = self._pedir_texto("Autor: ")
             anio = self._pedir_entero("Año de publicación: ", minimo=0)
             id_editorial = self._pedir_entero("ID de editorial: ", minimo=1)
-            generos_ids = self._pedir_texto("IDs de géneros (separados por coma): ")
-            generos_lista = [int(x.strip()) for x in generos_ids.split(",") if x.strip()]
+            generos_ids = self._pedir_texto(
+                "IDs de géneros (separados por coma): ")
+            generos_lista = [
+                int(x.strip())
+                for x in generos_ids.split(",") if x.strip()
+            ]
             descripcion = self._pedir_texto("Descripción: ", obligatorio=False)
 
             libro = Libro(
@@ -558,7 +606,8 @@ class Consola:
     def _modificar_libro(self) -> None:
         """Modifica un libro existente."""
         try:
-            id_libro = self._pedir_entero("ID del libro a modificar: ", minimo=1)
+            id_libro = self._pedir_entero(
+                "ID del libro a modificar: ", minimo=1)
             libro = self._servicio_libro.leer_por_id(id_libro)
             if libro is None:
                 print(f"\nNo existe un libro con el ID {id_libro}.")
@@ -573,12 +622,18 @@ class Consola:
             print(f"Año actual: {libro.anio_publicacion}")
             anio = self._pedir_entero("Nuevo año: ", minimo=0)
             print(f"ID editorial actual: {libro.editorial_id}")
-            id_editorial = self._pedir_entero("Nuevo ID de editorial: ", minimo=1)
+            id_editorial = self._pedir_entero(
+                "Nuevo ID de editorial: ", minimo=1)
             print(f"Géneros actuales: {libro.generos_ids}")
-            generos_ids = self._pedir_texto("Nuevos IDs de géneros (separados por coma): ")
-            generos_lista = [int(x.strip()) for x in generos_ids.split(",") if x.strip()]
+            generos_ids = self._pedir_texto(
+                "Nuevos IDs de géneros (separados por coma): ")
+            generos_lista = [
+                int(x.strip())
+                for x in generos_ids.split(",") if x.strip()
+            ]
             print(f"Descripción actual: {libro.descripcion}")
-            descripcion = self._pedir_texto("Nueva descripción: ", obligatorio=False)
+            descripcion = self._pedir_texto(
+                "Nueva descripción: ", obligatorio=False)
 
             libro.isbn = isbn
             libro.titulo = titulo
@@ -588,14 +643,15 @@ class Consola:
             libro.generos_ids = generos_lista
             libro.descripcion = descripcion
             self._servicio_libro.actualizar(libro)
-            print(f"\nLibro modificado exitosamente.")
+            print("\nLibro modificado exitosamente.")
         except ValueError as e:
             print(f"\nError: {e}")
 
     def _eliminar_libro(self) -> None:
         """Elimina un libro."""
         try:
-            id_libro = self._pedir_entero("ID del libro a eliminar: ", minimo=1)
+            id_libro = self._pedir_entero(
+                "ID del libro a eliminar: ", minimo=1)
             if self._confirmar("¿Está seguro de eliminar este libro?"):
                 if self._servicio_libro.eliminar(id_libro):
                     print("\nLibro eliminado exitosamente.")
@@ -607,7 +663,8 @@ class Consola:
     def _dar_de_baja_libro(self) -> None:
         """Da de baja un libro."""
         try:
-            id_libro = self._pedir_entero("ID del libro a dar de baja: ", minimo=1)
+            id_libro = self._pedir_entero(
+                "ID del libro a dar de baja: ", minimo=1)
             self._servicio_libro.dar_de_baja(id_libro)
             print("\nLibro dado de baja exitosamente.")
         except ValueError as e:
@@ -616,7 +673,8 @@ class Consola:
     def _dar_de_alta_libro(self) -> None:
         """Da de alta un libro."""
         try:
-            id_libro = self._pedir_entero("ID del libro a dar de alta: ", minimo=1)
+            id_libro = self._pedir_entero(
+                "ID del libro a dar de alta: ", minimo=1)
             self._servicio_libro.dar_de_alta(id_libro)
             print("\nLibro dado de alta exitosamente.")
         except ValueError as e:
@@ -635,6 +693,9 @@ class Consola:
         print("  4. Modificar precio")
         print("  5. Eliminar precio")
         print("  6. Cotizar precio de libro")
+        print("  7. Ver lista de precios bimonetaria")
+        print("  8. Exportar precios a archivo CSV")
+        print("  9. Obtener cotizaciones por API")
         print("  0. Volver")
 
         opcion = input("\nSeleccione una opción: ").strip()
@@ -651,17 +712,30 @@ class Consola:
             self._eliminar_precio()
         elif opcion == "6":
             self._cotizar_precio()
+        elif opcion == "7":
+            self._ver_lista_precios_bimonetaria()
+        elif opcion == "8":
+            self._exportar_precios_csv()
+        elif opcion == "9":
+            self._obtener_cotizaciones_api()
 
     def _listar_precios(self) -> None:
         """Lista todos los precios."""
         precios = self._servicio_precio.leer_todos()
-        self._mostrar_lista(precios, lambda p: f"[{p.id}] Libro {p.libro_id} - Moneda {p.moneda_id}: {p.valor} ({p.fecha})")
+        self._mostrar_lista(
+            precios,
+            lambda p: f"[{p.id}] Libro {p.libro_id} - Moneda {p.moneda_id}: "
+            f"{p.valor} ({p.fecha})",
+        )
 
     def _ver_precios_libro(self) -> None:
         """Muestra los precios de un libro."""
         id_libro = self._pedir_entero("ID del libro: ", minimo=1)
         precios = self._servicio_precio.leer_por_libro(id_libro)
-        self._mostrar_lista(precios, lambda p: f"[{p.id}] Moneda {p.moneda_id}: {p.valor} ({p.fecha})")
+        self._mostrar_lista(
+            precios,
+            lambda p: f"[{p.id}] Moneda {p.moneda_id}: {p.valor} ({p.fecha})",
+        )
 
     def _crear_precio(self) -> None:
         """Crea un nuevo precio."""
@@ -686,7 +760,8 @@ class Consola:
     def _modificar_precio(self) -> None:
         """Modifica un precio existente."""
         try:
-            id_precio = self._pedir_entero("ID del precio a modificar: ", minimo=1)
+            id_precio = self._pedir_entero(
+                "ID del precio a modificar: ", minimo=1)
             precio = self._servicio_precio.leer_por_id(id_precio)
             if precio is None:
                 print(f"\nNo existe un precio con el ID {id_precio}.")
@@ -699,7 +774,8 @@ class Consola:
             print(f"Valor actual: {precio.valor}")
             valor = self._pedir_decimal("Nuevo valor: ")
             print(f"Fecha actual: {precio.fecha}")
-            fecha = self._pedir_fecha("Nueva fecha (YYYY-MM-DD, Enter para hoy): ")
+            fecha = self._pedir_fecha(
+                "Nueva fecha (YYYY-MM-DD, Enter para hoy): ")
 
             precio.libro_id = id_libro
             precio.moneda_id = id_moneda
@@ -713,7 +789,8 @@ class Consola:
     def _eliminar_precio(self) -> None:
         """Elimina un precio."""
         try:
-            id_precio = self._pedir_entero("ID del precio a eliminar: ", minimo=1)
+            id_precio = self._pedir_entero(
+                "ID del precio a eliminar: ", minimo=1)
             if self._confirmar("¿Está seguro de eliminar este precio?"):
                 if self._servicio_precio.eliminar(id_precio):
                     print("\nPrecio eliminado exitosamente.")
@@ -726,10 +803,14 @@ class Consola:
         """Cotiza el precio de un libro en otra moneda."""
         try:
             id_libro = self._pedir_entero("ID del libro: ", minimo=1)
-            id_moneda_origen = self._pedir_entero("ID moneda origen: ", minimo=1)
-            id_moneda_destino = self._pedir_entero("ID moneda destino: ", minimo=1)
-            id_tipo_cotizacion = self._pedir_entero("ID tipo de cotización: ", minimo=1)
-            fecha = self._pedir_fecha("Fecha (YYYY-MM-DD, Enter para más reciente): ")
+            id_moneda_origen = self._pedir_entero(
+                "ID moneda origen: ", minimo=1)
+            id_moneda_destino = self._pedir_entero(
+                "ID moneda destino: ", minimo=1)
+            id_tipo_cotizacion = self._pedir_entero(
+                "ID tipo de cotización: ", minimo=1)
+            fecha = self._pedir_fecha(
+                "Fecha (YYYY-MM-DD, Enter para más reciente): ")
 
             resultado = self._servicio_precio.cotizar(
                 id_libro, id_moneda_origen, id_moneda_destino, id_tipo_cotizacion, fecha
@@ -740,6 +821,136 @@ class Consola:
                 print(f"\nPrecio cotizado: {resultado}")
         except ValueError as e:
             print(f"\nError: {e}")
+
+    def _ver_lista_precios_bimonetaria(self) -> None:
+        """Muestra la lista de precios de los libros en pesos y otra moneda seleccionada."""
+        self._mostrar_titulo("LISTA DE PRECIOS BIMONETARIA")
+        try:
+            monedas = self._servicio_moneda.leer_todos()
+            monedas_destino = [m for m in monedas if m.codigo != "ARS"]
+            if not monedas_destino:
+                print("\nNo hay monedas secundarias registradas en el sistema.")
+                return
+
+            print("Monedas disponibles para comparar:")
+            for m in monedas_destino:
+                print(f"  [{m.id}] {m.codigo} - {m.nombre} ({m.simbolo})")
+
+            id_moneda_destino = self._pedir_entero(
+                "\nID de la moneda secundaria a comparar: ", minimo=1
+            )
+
+            tipos_cot = self._servicio_tipo_cotizacion.leer_todos()
+            if not tipos_cot:
+                print("\nNo hay tipos de cotización registrados.")
+                return
+
+            print("\nTipos de cotización disponibles:")
+            for tc in tipos_cot:
+                print(f"  [{tc.id}] {tc.nombre}")
+
+            id_tipo = self._pedir_entero(
+                "\nID del tipo de cotización a aplicar: ", minimo=1
+            )
+            fecha = self._pedir_fecha(
+                "Fecha (YYYY-MM-DD, Enter para más reciente): "
+            )
+
+            filas = self._servicio_precio.lista_precios_bimonetaria(
+                moneda_destino_id=id_moneda_destino,
+                tipo_id=id_tipo,
+                fecha=fecha,
+            )
+
+            if not filas:
+                print("\nNo hay libros cargados en el catálogo.")
+                return
+
+            moneda_base = filas[0]["moneda_base"]
+            moneda_dest = filas[0]["moneda_destino"]
+            cot = filas[0]["cotizacion"]
+            tipo_obj = self._servicio_tipo_cotizacion.leer_por_id(id_tipo)
+            tipo_nombre = tipo_obj.nombre if tipo_obj else f"Tipo {id_tipo}"
+
+            print(f"\n{'─' * 70}")
+            print(
+                f"  PRECIOS BIMONETARIOS: {moneda_base.codigo} y {moneda_dest.codigo} "
+                f"(Cotización {tipo_nombre}: ${cot.valor_venta:.2f})"
+            )
+            print(f"{'─' * 70}")
+
+            for fila in filas:
+                libro = fila["libro"]
+                p_base = fila["precio_base"]
+                p_dest = fila["precio_destino"]
+                es_cot = fila["cotizado"]
+
+                txt_base = (
+                    f"{moneda_base.simbolo} {p_base:.2f}"
+                    if p_base is not None
+                    else "Sin precio"
+                )
+                if p_dest is not None:
+                    origen_txt = "Cotizado" if es_cot else "Directo"
+                    txt_dest = f"{moneda_dest.simbolo} {p_dest:.2f} ({origen_txt})"
+                else:
+                    txt_dest = "Sin precio"
+
+                print(f"  [{libro.id}] {libro.titulo} - {libro.autor}")
+                print(
+                    f"       {moneda_base.codigo}: {txt_base} | "
+                    f"{moneda_dest.codigo}: {txt_dest}"
+                )
+
+        except ValueError as e:
+            print(f"\nError: {e}")
+
+    def _exportar_precios_csv(self) -> None:
+        """Exporta los precios de los libros para todos los tipos de monedas a CSV."""
+        self._mostrar_titulo("EXPORTAR PRECIOS A ARCHIVO CSV")
+        try:
+            ruta = self._pedir_texto(
+                "Ruta o nombre del archivo CSV (Enter para 'precios_monedas.csv'): ",
+                obligatorio=False,
+            )
+            if not ruta:
+                ruta = "precios_monedas.csv"
+
+            tipos_cot = self._servicio_tipo_cotizacion.leer_todos()
+            id_tipo = None
+            if tipos_cot:
+                tipo_defecto = next(
+                    (tc for tc in tipos_cot
+                     if tc.nombre.strip().casefold() == "blue"),
+                    tipos_cot[0],
+                )
+                print(
+                    f"\nTipos de cotización disponibles (defecto: [{tipo_defecto.id}] {tipo_defecto.nombre}):"
+                )
+                for tc in tipos_cot:
+                    print(f"  [{tc.id}] {tc.nombre}")
+                id_tipo_texto = self._pedir_texto(
+                    f"ID del tipo de cotización (Enter para '{tipo_defecto.nombre}'): ",
+                    obligatorio=False,
+                )
+                id_tipo = int(
+                    id_tipo_texto) if id_tipo_texto else tipo_defecto.id
+
+            fecha = self._pedir_fecha(
+                "Fecha para cotizaciones (YYYY-MM-DD, Enter para más reciente): "
+            )
+
+            total = self._servicio_precio.exportar_precios_csv(
+                ruta_archivo=ruta,
+                tipo_id=id_tipo,
+                fecha=fecha,
+            )
+            print(
+                f"\nPrecios exportados exitosamente a '{ruta}' "
+                f"({total} registros generados)."
+            )
+        except (ValueError, OSError) as e:
+            print(f"\nError al exportar precios: {e}")
 
     # ------------------------------------------------------------------
     # Gestión de Stock
@@ -783,7 +994,8 @@ class Consola:
     def _listar_stock(self) -> None:
         """Lista todo el stock."""
         stock = self._servicio_stock.leer_todos()
-        self._mostrar_lista(stock, lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades")
+        self._mostrar_lista(
+            stock, lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades")
 
     def _ver_stock_libro(self) -> None:
         """Muestra el stock de un libro."""
@@ -792,7 +1004,8 @@ class Consola:
         if registro is None:
             print(f"\nNo hay stock registrado para el libro {id_libro}.")
         else:
-            print(f"\nStock del libro {id_libro}: {registro.cantidad} unidades")
+            print(
+                f"\nStock del libro {id_libro}: {registro.cantidad} unidades")
 
     def _ingresar_stock(self) -> None:
         """Ingresa stock a un libro."""
@@ -800,7 +1013,7 @@ class Consola:
             id_libro = self._pedir_entero("ID del libro: ", minimo=1)
             cantidad = self._pedir_entero("Cantidad a ingresar: ", minimo=1)
             self._servicio_stock.ingresar(id_libro, cantidad)
-            print(f"\nStock ingresado exitosamente.")
+            print("\nStock ingresado exitosamente.")
         except ValueError as e:
             print(f"\nError: {e}")
 
@@ -810,7 +1023,7 @@ class Consola:
             id_libro = self._pedir_entero("ID del libro: ", minimo=1)
             cantidad = self._pedir_entero("Cantidad a egresar: ", minimo=1)
             self._servicio_stock.egresar(id_libro, cantidad)
-            print(f"\nStock egresado exitosamente.")
+            print("\nStock egresado exitosamente.")
         except ValueError as e:
             print(f"\nError: {e}")
 
@@ -840,21 +1053,27 @@ class Consola:
     def _stock_sin_disponibilidad(self) -> None:
         """Muestra el stock sin disponibilidad."""
         stock = self._servicio_stock.sin_disponibilidad()
-        self._mostrar_lista(stock, lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades")
+        self._mostrar_lista(
+            stock, lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades")
 
     def _stock_bajo(self) -> None:
         """Muestra el stock bajo."""
         minimo = self._pedir_entero("Cantidad mínima: ", minimo=0)
         stock = self._servicio_stock.con_stock_bajo(minimo)
-        self._mostrar_lista(stock, lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades")
+        self._mostrar_lista(
+            stock, lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades")
 
     def _valor_inventario(self) -> None:
         """Calcula el valor del inventario."""
         try:
-            id_moneda_origen = self._pedir_entero("ID moneda origen: ", minimo=1)
-            id_moneda_destino = self._pedir_entero("ID moneda destino: ", minimo=1)
-            id_tipo_cotizacion = self._pedir_entero("ID tipo de cotización: ", minimo=1)
-            fecha = self._pedir_fecha("Fecha (YYYY-MM-DD, Enter para más reciente): ")
+            id_moneda_origen = self._pedir_entero(
+                "ID moneda origen: ", minimo=1)
+            id_moneda_destino = self._pedir_entero(
+                "ID moneda destino: ", minimo=1)
+            id_tipo_cotizacion = self._pedir_entero(
+                "ID tipo de cotización: ", minimo=1)
+            fecha = self._pedir_fecha(
+                "Fecha (YYYY-MM-DD, Enter para más reciente): ")
 
             valor = self._servicio_stock.valor_inventario(
                 id_moneda_origen, id_moneda_destino, id_tipo_cotizacion, fecha
@@ -877,6 +1096,7 @@ class Consola:
         print("  5. Modificar cotización")
         print("  6. Eliminar cotización")
         print("  7. Convertir moneda")
+        print("  8. Obtener cotizaciones por API")
         print("  0. Volver")
 
         opcion = input("\nSeleccione una opción: ").strip()
@@ -895,6 +1115,8 @@ class Consola:
             self._eliminar_cotizacion()
         elif opcion == "7":
             self._convertir_moneda()
+        elif opcion == "8":
+            self._obtener_cotizaciones_api()
 
     def _listar_cotizaciones(self) -> None:
         """Lista todas las cotizaciones."""
@@ -912,11 +1134,14 @@ class Consola:
             print("La fecha es obligatoria para esta consulta.")
             return
 
-        cotizacion = self._servicio_cotizacion.leer_por_tipo_y_fecha(id_tipo, fecha)
+        cotizacion = self._servicio_cotizacion.leer_por_tipo_y_fecha(
+            id_tipo, fecha)
         if cotizacion is None:
-            print(f"\nNo existe cotización para el tipo {id_tipo} en la fecha {fecha}.")
+            print(
+                f"\nNo existe cotización para el tipo {id_tipo} en la fecha {fecha}.")
         else:
-            print(f"\nCotización - Tipo {cotizacion.tipo_id} - {cotizacion.fecha}")
+            print(
+                f"\nCotización - Tipo {cotizacion.tipo_id} - {cotizacion.fecha}")
             print(f"  Valor de compra: {cotizacion.valor_compra}")
             print(f"  Valor de venta: {cotizacion.valor_venta}")
             print(f"  Spread: {cotizacion.spread}")
@@ -924,7 +1149,8 @@ class Consola:
     def _ver_historico_cotizaciones(self) -> None:
         """Muestra el histórico de cotizaciones de un tipo."""
         id_tipo = self._pedir_entero("ID del tipo de cotización: ", minimo=1)
-        cotizaciones = self._servicio_cotizacion.leer_historico_por_tipo(id_tipo)
+        cotizaciones = self._servicio_cotizacion.leer_historico_por_tipo(
+            id_tipo)
         self._mostrar_lista(
             cotizaciones,
             lambda c: f"[{c.id}] {c.fecha}: Compra {c.valor_compra} / Venta {c.valor_venta}",
@@ -933,7 +1159,8 @@ class Consola:
     def _crear_cotizacion(self) -> None:
         """Crea una nueva cotización."""
         try:
-            id_tipo = self._pedir_entero("ID del tipo de cotización: ", minimo=1)
+            id_tipo = self._pedir_entero(
+                "ID del tipo de cotización: ", minimo=1)
             fecha = self._pedir_fecha("Fecha (YYYY-MM-DD): ")
             if fecha is None:
                 print("La fecha es obligatoria.")
@@ -956,15 +1183,18 @@ class Consola:
     def _modificar_cotizacion(self) -> None:
         """Modifica una cotización existente."""
         try:
-            id_tipo = self._pedir_entero("ID del tipo de cotización: ", minimo=1)
+            id_tipo = self._pedir_entero(
+                "ID del tipo de cotización: ", minimo=1)
             fecha = self._pedir_fecha("Fecha (YYYY-MM-DD): ")
             if fecha is None:
                 print("La fecha es obligatoria.")
                 return
 
-            cotizacion = self._servicio_cotizacion.leer_por_tipo_y_fecha(id_tipo, fecha)
+            cotizacion = self._servicio_cotizacion.leer_por_tipo_y_fecha(
+                id_tipo, fecha)
             if cotizacion is None:
-                print(f"\nNo existe cotización para el tipo {id_tipo} en la fecha {fecha}.")
+                print(
+                    f"\nNo existe cotización para el tipo {id_tipo} en la fecha {fecha}.")
                 return
 
             print(f"\nValor de compra actual: {cotizacion.valor_compra}")
@@ -982,7 +1212,8 @@ class Consola:
     def _eliminar_cotizacion(self) -> None:
         """Elimina una cotización."""
         try:
-            id_tipo = self._pedir_entero("ID del tipo de cotización: ", minimo=1)
+            id_tipo = self._pedir_entero(
+                "ID del tipo de cotización: ", minimo=1)
             fecha = self._pedir_fecha("Fecha (YYYY-MM-DD): ")
             if fecha is None:
                 print("La fecha es obligatoria.")
@@ -992,7 +1223,8 @@ class Consola:
                 if self._servicio_cotizacion.eliminar(id_tipo, fecha):
                     print("\nCotización eliminada exitosamente.")
                 else:
-                    print(f"\nNo existe cotización para el tipo {id_tipo} en la fecha {fecha}.")
+                    print(
+                        f"\nNo existe cotización para el tipo {id_tipo} en la fecha {fecha}.")
         except ValueError as e:
             print(f"\nError: {e}")
 
@@ -1000,10 +1232,14 @@ class Consola:
         """Convierte un valor entre monedas."""
         try:
             valor = self._pedir_decimal("Valor a convertir: ")
-            moneda_origen = self._pedir_texto("Código moneda origen (ej: USD): ").upper()
-            moneda_destino = self._pedir_texto("Código moneda destino (ej: ARS): ").upper()
-            id_tipo_cotizacion = self._pedir_entero("ID tipo de cotización: ", minimo=1)
-            fecha = self._pedir_fecha("Fecha (YYYY-MM-DD, Enter para más reciente): ")
+            moneda_origen = self._pedir_texto(
+                "Código moneda origen (ej: USD): ").upper()
+            moneda_destino = self._pedir_texto(
+                "Código moneda destino (ej: ARS): ").upper()
+            id_tipo_cotizacion = self._pedir_entero(
+                "ID tipo de cotización: ", minimo=1)
+            fecha = self._pedir_fecha(
+                "Fecha (YYYY-MM-DD, Enter para más reciente): ")
 
             resultado = self._servicio_cotizacion.convertir(
                 valor, moneda_origen, moneda_destino, id_tipo_cotizacion, fecha
@@ -1011,3 +1247,22 @@ class Consola:
             print(f"\n{valor} {moneda_origen} = {resultado} {moneda_destino}")
         except ValueError as e:
             print(f"\nError: {e}")
+
+    def _obtener_cotizaciones_api(self) -> None:
+        """Obtiene y registra las cotizaciones del dólar desde la API."""
+        self._mostrar_titulo("OBTENER COTIZACIONES POR API")
+        try:
+            print("Consultando cotizaciones desde la API del dólar...")
+            cotizaciones = self._servicio_cotizacion.obtener_cotizaciones()
+            print(
+                f"\nSe obtuvieron y registraron {len(cotizaciones)} cotizaciones exitosamente:"
+            )
+            for cot in cotizaciones:
+                tipo = self._servicio_tipo_cotizacion.leer_por_id(cot.tipo_id)
+                nombre_tipo = tipo.nombre if tipo else f"Tipo {cot.tipo_id}"
+                print(
+                    f"  - {nombre_tipo:<22} Compra: ${cot.valor_compra:>8.2f} | "
+                    f"Venta: ${cot.valor_venta:>8.2f} | Fecha: {cot.fecha}"
+                )
+        except ValueError as e:
+            print(f"\nError al obtener cotizaciones: {e}")
