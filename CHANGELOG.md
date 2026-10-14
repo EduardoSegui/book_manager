@@ -5,8 +5,9 @@
 ## [Integración Supabase]
 - Conexión de la aplicación a la base de datos relacional de Supabase (PostgreSQL) mediante SQLAlchemy, en reemplazo de SQLite local.
 - `connection.py` ahora resuelve la URL según el uso: `DATABASE_URL` (pooler en modo transacción, puerto 6543) para la aplicación y `DIRECT_URL` (pooler en modo sesión, puerto 5432) para migraciones/DDL.
-- Soporte de la variable `SUPABASE_DB_PASSWORD` para inyectar la contraseña en las URL que contienen el marcador `[YOUR-PASSWORD]`, evitando versionar credenciales.
+- Soporte de la variable `SUPABASE_DB_PASSWORD` para inyectar la contraseña en las URL que contienen el marcador `[YOUR-PASSWORD]`; la contraseña de Supabase se completa en el archivo `.env` para no dejarla en el código fuente.
 - Configuración de PostgreSQL: `pool_pre_ping`, SSL (`sslmode=require`) y `NullPool` para el pooler en modo transacción (pgbouncer).
+- Desactivación de las sentencias preparadas automáticas de psycopg 3 (`prepare_threshold=None`) solo cuando se usa ese driver contra el pooler de Supabase, para evitar el error `DuplicatePreparedStatement` (las conexiones de servidor se reutilizan entre clientes en modo transacción).
 - `migrar_datos` inicializa la conexión con `DIRECT_URL` y reinicia las secuencias (`setval`) tras insertar IDs explícitos, para que las altas posteriores no colisionen con la clave primaria.
 - Incorporación de `psycopg2-binary` a `requirements.txt` y documentación de las variables de entorno en el README.
 
