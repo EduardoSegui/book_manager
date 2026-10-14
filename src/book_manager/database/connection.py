@@ -66,6 +66,12 @@ def _crear_engine(database_url: str) -> Engine:
     url = url.set(query=parametros)
     if usa_pgbouncer:
         opciones["poolclass"] = NullPool
+        # psycopg 3 prepara sentencias automáticamente, pero el pooler en modo
+        # transacción de Supabase reutiliza conexiones de servidor entre
+        # clientes y provoca "DuplicatePreparedStatement". Se desactiva la
+        # preparación automática solo para ese driver.
+        if url.get_driver_name() == "psycopg":
+            opciones["connect_args"] = {"prepare_threshold": None}
     return create_engine(url, **opciones)
 
 
