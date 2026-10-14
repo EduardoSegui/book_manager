@@ -2,6 +2,18 @@
 
 ## Dia 14/10/2026
 
+## [Integración Supabase]
+- Conexión de la aplicación a la base de datos relacional de Supabase (PostgreSQL) mediante SQLAlchemy, en reemplazo de SQLite local.
+- `connection.py` ahora resuelve la URL según el uso: `DATABASE_URL` (pooler en modo transacción, puerto 6543) para la aplicación y `DIRECT_URL` (pooler en modo sesión, puerto 5432) para migraciones/DDL.
+- Soporte de la variable `SUPABASE_DB_PASSWORD` para inyectar la contraseña en las URL que contienen el marcador `[YOUR-PASSWORD]`, evitando versionar credenciales.
+- Configuración de PostgreSQL: `pool_pre_ping`, SSL (`sslmode=require`) y `NullPool` para el pooler en modo transacción (pgbouncer).
+- `migrar_datos` inicializa la conexión con `DIRECT_URL` y reinicia las secuencias (`setval`) tras insertar IDs explícitos, para que las altas posteriores no colisionen con la clave primaria.
+- Incorporación de `psycopg2-binary` a `requirements.txt` y documentación de las variables de entorno en el README.
+
+## [Correcciones]
+- Restauración del método `_crear_libro` en la consola, que había quedado fusionado con `_buscar_libro`, y de la lectura de `generos_ids`.
+- Corrección en `_convertir` (`services.py`) para usar `elif`, evitando el error de conversión no soportada al pasar de dólares a pesos.
+
 ## [Ejercicio 08]
 - Incorporación de nuevas opciones en la interfaz de consola (`console.py`) para interactuar con las cotizaciones de la API y reportes avanzados de precios.
 - Implementación de la opción de menú "Obtener las cotizaciones por api" en la gestión de cotizaciones y en la gestión de precios, conectada con `ServicioCotizacionDolar.obtener_cotizaciones`.

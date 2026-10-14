@@ -48,7 +48,7 @@ MAXIMO_DETALLES = 3
 # --- Utilidades internas de validación y cálculo ---
 
 def _normalizar_texto(valor: str) -> str:
-    """Normaliza un texto para compararlo sin distinguir mayúsculas ni espacios."""
+    """Normaliza texto para comparar sin mayúsculas ni espacios."""
     return " ".join(valor.split()).casefold()
 
 
@@ -100,7 +100,8 @@ def _exigir_referencias(
     ]
     if inexistentes:
         raise ValueError(
-            f"Referencias a {etiqueta} inexistentes: ID(s) {', '.join(inexistentes)}."
+            f"Referencias a {etiqueta} inexistentes: "
+            f"ID(s) {', '.join(inexistentes)}."
         )
 
 
@@ -125,16 +126,20 @@ def _precio_vigente(
 
 
 def _cotizacion_aplicable(
-    repositorio: IRepositorioCotizacionDolar, tipo_id: int, fecha: Optional[date]
+    repositorio: IRepositorioCotizacionDolar,
+    tipo_id: int,
+    fecha: Optional[date],
 ) -> Optional[CotizacionDolar]:
     """Obtiene la cotización de un tipo, exacta o la más reciente anterior."""
     if fecha is not None:
         exacta = repositorio.leer_por_tipo_y_fecha(tipo_id, fecha)
         if exacta is not None:
             return exacta
-        candidatos = [cotizacion
-                      for cotizacion in repositorio.leer_historico_por_tipo(tipo_id)
-                      if cotizacion.fecha <= fecha]
+        candidatos = [
+            cotizacion
+            for cotizacion in repositorio.leer_historico_por_tipo(tipo_id)
+            if cotizacion.fecha <= fecha
+        ]
     else:
         candidatos = repositorio.leer_historico_por_tipo(tipo_id)
     if not candidatos:
@@ -143,9 +148,12 @@ def _cotizacion_aplicable(
 
 
 def _convertir(
-    valor: Decimal, cotizacion: CotizacionDolar, origen: str, destino: str
+    valor: Decimal,
+    cotizacion: CotizacionDolar,
+    origen: str,
+    destino: str,
 ) -> Decimal:
-    """Convierte un valor entre dólares y pesos con el valor de venta del dólar."""
+    """Convierte entre dólares y pesos usando valor de venta del dólar."""
     if origen == destino:
         return valor.quantize(DOS_DECIMALES, rounding=ROUND_HALF_UP)
     if origen == CODIGO_MONEDA_DOLAR and destino == CODIGO_MONEDA_BASE:
@@ -154,8 +162,9 @@ def _convertir(
         convertido = valor / cotizacion.valor_venta
     else:
         raise ValueError(
-            f"La conversión de {origen} a {destino} no está soportada. Solo se "
-            f"admiten conversiones entre {CODIGO_MONEDA_DOLAR} y {CODIGO_MONEDA_BASE}."
+            f"La conversión de {origen} a {destino} no está soportada. "
+            f"Solo se admiten conversiones entre {CODIGO_MONEDA_DOLAR} y "
+            f"{CODIGO_MONEDA_BASE}."
         )
     return convertido.quantize(DOS_DECIMALES, rounding=ROUND_HALF_UP)
 
@@ -208,7 +217,7 @@ class ServicioBase(IServicio[T]):
         self._repositorio = repositorio
 
     def crear(self, entidad: T) -> T:
-        """Crea la entidad asignándole ID y validando unicidad y reglas de negocio."""
+        """Crea la entidad asignando ID y validando unicidad y reglas."""
         _asignar_id_pendiente(entidad, self._repositorio.leer_todos())
         self._exigir_campos_unicos(entidad)
         self._validar_creacion(entidad)
@@ -223,7 +232,7 @@ class ServicioBase(IServicio[T]):
         return self._repositorio.leer_todos()
 
     def leer_por_campo(self, campo: str, valor: str) -> Optional[T]:
-        """Busca una entidad por un campo de texto, sin distinguir mayúsculas."""
+        """Busca una entidad por un campo de texto (sin mayúsculas)."""
         clave = _normalizar_texto(valor)
         for entidad in self._repositorio.leer_todos():
             if _normalizar_texto(getattr(entidad, campo)) == clave:
@@ -263,7 +272,7 @@ class ServicioBase(IServicio[T]):
         """Punto de extensión para las validaciones previas al alta."""
 
     def _validar_actualizacion(self, entidad: T) -> None:
-        """Punto de extensión para las validaciones previas a la modificación."""
+        """Validaciones previas a la modificación."""
 
     def _validar_eliminacion(self, entidad: T) -> None:
         """Punto de extensión para las validaciones previas al borrado."""
@@ -278,9 +287,11 @@ class ServicioGenero(ServicioBase[Genero]):
     _campos_unicos = ("nombre",)
 
     def __init__(
-        self, repositorio: IRepositorio[Genero], repositorio_libro: IRepositorio[Libro]
+        self,
+        repositorio: IRepositorio[Genero],
+        repositorio_libro: IRepositorio[Libro],
     ) -> None:
-        """Inicializa el servicio con los repositorios de género y de libros."""
+        """Inicializa con repositorios de género y de libros."""
         super().__init__(repositorio)
         self._repositorio_libro = repositorio_libro
 
@@ -308,7 +319,7 @@ class ServicioEditorial(ServicioBase[Editorial]):
         repositorio: IRepositorio[Editorial],
         repositorio_libro: IRepositorio[Libro],
     ) -> None:
-        """Inicializa el servicio con los repositorios de editorial y de libros."""
+        """Inicializa con repositorios de editorial y de libros."""
         super().__init__(repositorio)
         self._repositorio_libro = repositorio_libro
 
@@ -357,7 +368,8 @@ class ServicioTipoCotizacion(ServicioBase[TipoCotizacion]):
 
     def _validar_eliminacion(self, entidad: TipoCotizacion) -> None:
         """Impide borrar un tipo de cotización que tiene historial cargado."""
-        cotizaciones = self._repositorio_cotizacion.leer_historico_por_tipo(entidad.id)
+        cotizaciones = self._repositorio_cotizacion.leer_historico_por_tipo(
+            entidad.id)
         if cotizaciones:
             raise ValueError(
                 f"El tipo de cotización '{entidad.nombre}' no se puede eliminar "
@@ -423,7 +435,8 @@ class ServicioLibro(ServicioBase[Libro]):
         libro = self._exigir_existente(id)
         if libro.activo == activar:
             estado = "alta" if activar else "baja"
-            raise ValueError(f"El libro '{libro.titulo}' ya está dado de {estado}.")
+            raise ValueError(
+                f"El libro '{libro.titulo}' ya está dado de {estado}.")
         if activar:
             libro.activar()
         else:
@@ -512,7 +525,8 @@ class ServicioCotizacionDolar:
         """Lee todas las cotizaciones ordenadas por fecha y tipo."""
         cotizaciones = []
         for tipo in self._repositorio_tipo.leer_todos():
-            cotizaciones.extend(self._repositorio.leer_historico_por_tipo(tipo.id))
+            cotizaciones.extend(
+                self._repositorio.leer_historico_por_tipo(tipo.id))
         return sorted(cotizaciones, key=lambda c: (c.fecha, c.tipo_id))
 
     def leer_historico_por_tipo(self, tipo_id: int) -> List[CotizacionDolar]:
@@ -560,7 +574,8 @@ class ServicioCotizacionDolar:
     def _exigir_existente(self, tipo_id: int) -> TipoCotizacion:
         """Devuelve el tipo de cotización registrado con ese ID o falla."""
         return _exigir_existencia(
-            self._repositorio_tipo.leer_por_id(tipo_id), tipo_id, "el tipo de cotización"
+            self._repositorio_tipo.leer_por_id(
+                tipo_id), tipo_id, "el tipo de cotización"
         )
 
     def _leer_moneda(self, codigo: str) -> Moneda:
@@ -573,7 +588,8 @@ class ServicioCotizacionDolar:
         for moneda in self._repositorio_moneda.leer_todos():
             if _normalizar_texto(moneda.codigo) == clave:
                 return moneda
-        raise ValueError(f"La moneda '{codigo}' no está registrada en el sistema.")
+        raise ValueError(
+            f"La moneda '{codigo}' no está registrada en el sistema.")
 
     def obtener_cotizaciones(
         self, api_url: Optional[str] = None
@@ -780,7 +796,8 @@ class ServicioPrecio(ServicioBase[Precio]):
         precio = self.precio_vigente(libro_id, moneda_origen_id)
         if precio is None:
             return None
-        cotizacion = _cotizacion_aplicable(self._repositorio_cotizacion, tipo_id, fecha)
+        cotizacion = _cotizacion_aplicable(
+            self._repositorio_cotizacion, tipo_id, fecha)
         if cotizacion is None:
             raise ValueError(
                 f"El tipo de cotización {tipo_id} no tiene cotizaciones cargadas."
@@ -982,7 +999,8 @@ class ServicioPrecio(ServicioBase[Precio]):
     def _leer_moneda(self, moneda_id: int) -> Moneda:
         """Devuelve la moneda registrada con ese ID o falla."""
         return _exigir_existencia(
-            self._repositorio_moneda.leer_por_id(moneda_id), moneda_id, "la moneda"
+            self._repositorio_moneda.leer_por_id(
+                moneda_id), moneda_id, "la moneda"
         )
 
     def _validar_creacion(self, entidad: Precio) -> None:
@@ -1016,7 +1034,7 @@ class ServicioStock:
         repositorio_moneda: IRepositorio[Moneda],
         repositorio_cotizacion: IRepositorioCotizacionDolar,
     ) -> None:
-        """Inicializa el servicio con los repositorios que valida y consulta."""
+        """Inicializa con repositorios que valida y consulta."""
         self._repositorio = repositorio
         self._repositorio_libro = repositorio_libro
         self._repositorio_precio = repositorio_precio
@@ -1061,8 +1079,9 @@ class ServicioStock:
         )
         if stock.disponible:
             raise ValueError(
-                f"No se puede eliminar el stock del libro {libro_id} porque aún "
-                f"quedan {stock.cantidad} unidad(es). Egreselas antes de eliminarlo."
+                f"No se puede eliminar el stock del libro {libro_id} porque "
+                f"aún quedan {stock.cantidad} unidad(es). Egreselas antes de "
+                "eliminarlo."
             )
         return self._repositorio.eliminar(libro_id)
 
@@ -1102,8 +1121,8 @@ class ServicioStock:
         return [stock for stock in self.leer_todos() if not stock.disponible]
 
     def con_stock_bajo(self, cantidad_minima: int) -> List[Stock]:
-        """Lista los registros de stock que están en o por debajo de un mínimo."""
-        return [stock for stock in self.leer_todos() if stock.cantidad <= cantidad_minima]
+        """Registros de stock en o por debajo del mínimo."""
+        return [s for s in self.leer_todos() if s.cantidad <= cantidad_minima]
 
     def valor_inventario(
         self,
@@ -1112,16 +1131,16 @@ class ServicioStock:
         tipo_id: int,
         fecha: Optional[date] = None,
     ) -> Decimal:
-        """Calcula el valor del inventario multiplicando stock por precio vigente.
+        """Calcula el valor del inventario (stock x precio vigente)."""
 
-        Los libros sin precio cargado en la moneda de origen se omiten del cálculo.
-        """
         origen = self._leer_moneda(moneda_origen_id)
         destino = self._leer_moneda(moneda_destino_id)
-        cotizacion = _cotizacion_aplicable(self._repositorio_cotizacion, tipo_id, fecha)
+        cotizacion = _cotizacion_aplicable(
+            self._repositorio_cotizacion, tipo_id, fecha)
         if cotizacion is None:
             raise ValueError(
-                f"El tipo de cotización {tipo_id} no tiene cotizaciones cargadas."
+                f"El tipo de cotización {tipo_id} no tiene cotizaciones "
+                "cargadas."
             )
         total = Decimal("0")
         for stock in self.leer_todos():
@@ -1130,13 +1149,15 @@ class ServicioStock:
             )
             if precio is not None:
                 valor = Decimal(stock.cantidad) * precio.valor
-                total += _convertir(valor, cotizacion, origen.codigo, destino.codigo)
+                total += _convertir(valor, cotizacion,
+                                    origen.codigo, destino.codigo)
         return total.quantize(DOS_DECIMALES, rounding=ROUND_HALF_UP)
 
     def _leer_moneda(self, moneda_id: int) -> Moneda:
         """Devuelve la moneda registrada con ese ID o falla."""
         return _exigir_existencia(
-            self._repositorio_moneda.leer_por_id(moneda_id), moneda_id, "la moneda"
+            self._repositorio_moneda.leer_por_id(
+                moneda_id), moneda_id, "la moneda"
         )
 
     def _exigir_libro(self, libro_id: int) -> Libro:
@@ -1149,7 +1170,8 @@ class ServicioStock:
     def _exigir_cantidad(cantidad: int, operacion: str) -> None:
         """Valida que la cantidad a mover sea mayor a cero."""
         if cantidad <= 0:
-            raise ValueError(f"La cantidad a {operacion} debe ser mayor a cero.")
+            raise ValueError(
+                f"La cantidad a {operacion} debe ser mayor a cero.")
 
 
 # --- Funciones de conveniencia a nivel de módulo ---
@@ -1169,7 +1191,7 @@ def obtener_cotizaciones(
         api_url (Optional[str]): URL alternativa de la API.
 
     Returns:
-        List[CotizacionDolar]: Lista de cotizaciones registradas en la base de datos.
+        List[CotizacionDolar]: Cotizaciones registradas en la base de datos.
     """
     if servicio is None:
         servicio = ServicioCotizacionDolar(

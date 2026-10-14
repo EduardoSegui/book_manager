@@ -10,7 +10,6 @@ import csv
 import os
 from datetime import date
 from decimal import Decimal
-from typing import Any
 
 from book_manager.entities.entities import (
     CotizacionDolar,
@@ -149,7 +148,8 @@ def cargar_libros(repositorio: RepositorioLibro) -> int:
             isbn=fila["isbn"],
             titulo=fila["titulo"],
             autor=fila["autor"],
-            anio_publicacion=int(fila["anio_publicacion"]) if fila.get("anio_publicacion") else None,
+            anio_publicacion=int(fila["anio_publicacion"]) if fila.get(
+                "anio_publicacion") else None,
             editorial_id=int(fila["editorial_id"]),
             generos_ids=_parsear_lista_enteros(fila.get("generos_ids", "")),
             descripcion=fila.get("descripcion", ""),
@@ -236,17 +236,19 @@ def cargar_todos_los_datos(
         repo_cotizacion: Repositorio de cotizaciones del dólar.
 
     Returns:
-        dict[str, int]: Diccionario con la cantidad de registros cargados por entidad.
+        dict[str, int]: Cantidad de registros cargados por entidad.
     """
     resultados: dict[str, int] = {}
 
     resultados["generos"] = cargar_generos(repo_genero)
     resultados["editoriales"] = cargar_editoriales(repo_editorial)
     resultados["monedas"] = cargar_monedas(repo_moneda)
-    resultados["tipos_cotizacion"] = cargar_tipos_cotizacion(repo_tipo_cotizacion)
+    resultados["tipos_cotizacion"] = cargar_tipos_cotizacion(
+        repo_tipo_cotizacion)
     resultados["libros"] = cargar_libros(repo_libro)
     resultados["precios"] = cargar_precios(repo_precio)
     resultados["stock"] = cargar_stock(repo_stock)
-    resultados["cotizaciones_dolar"] = cargar_cotizaciones_dolar(repo_cotizacion)
+    resultados["cotizaciones_dolar"] = cargar_cotizaciones_dolar(
+        repo_cotizacion)
 
     return resultados

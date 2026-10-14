@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Modelos ORM de SQLAlchemy para el sistema Book Manager.
 
-Ejercicio 04: Creación de las tablas del sistema con tipos de datos y relaciones.
+Ejercicio 04: Tablas del sistema con tipos de datos y relaciones.
 """
 
 from datetime import date
@@ -44,9 +44,12 @@ class Genero(Base):
 
     __tablename__ = "generos"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    nombre: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    descripcion: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(
+        String(50), unique=True, nullable=False)
+    descripcion: Mapped[str] = mapped_column(
+        String(200), default="", nullable=False)
 
     # Relación inversa
     libros: Mapped[list["Libro"]] = relationship(
@@ -59,8 +62,10 @@ class Editorial(Base):
 
     __tablename__ = "editoriales"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    nombre: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(
+        String(100), unique=True, nullable=False)
 
     # Relación inversa
     libros: Mapped[list["Libro"]] = relationship(back_populates="editorial")
@@ -71,7 +76,8 @@ class Moneda(Base):
 
     __tablename__ = "monedas"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True)
     codigo: Mapped[str] = mapped_column(String(3), unique=True, nullable=False)
     nombre: Mapped[str] = mapped_column(String(50), nullable=False)
     simbolo: Mapped[str] = mapped_column(String(5), nullable=False)
@@ -85,9 +91,12 @@ class TipoCotizacion(Base):
 
     __tablename__ = "tipos_cotizacion"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    nombre: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    descripcion: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(
+        String(50), unique=True, nullable=False)
+    descripcion: Mapped[str] = mapped_column(
+        String(200), default="", nullable=False)
 
     # Relaciones inversas
     cotizaciones: Mapped[list["CotizacionDolar"]] = relationship(
@@ -100,15 +109,19 @@ class Libro(Base):
 
     __tablename__ = "libros"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True)
     isbn: Mapped[str] = mapped_column(String(17), unique=True, nullable=False)
     titulo: Mapped[str] = mapped_column(String(200), nullable=False)
     autor: Mapped[str] = mapped_column(String(150), nullable=False)
-    anio_publicacion: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    anio_publicacion: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True
+    )
     editorial_id: Mapped[int] = mapped_column(
         ForeignKey("editoriales.id", ondelete="RESTRICT"), nullable=False
     )
-    descripcion: Mapped[str] = mapped_column(String(500), default="", nullable=False)
+    descripcion: Mapped[str] = mapped_column(
+        String(500), default="", nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Relaciones
@@ -129,7 +142,8 @@ class Precio(Base):
 
     __tablename__ = "precios"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True)
     libro_id: Mapped[int] = mapped_column(
         ForeignKey("libros.id", ondelete="CASCADE"), nullable=False
     )
@@ -149,9 +163,11 @@ class Stock(Base):
 
     __tablename__ = "stock"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True)
     libro_id: Mapped[int] = mapped_column(
-        ForeignKey("libros.id", ondelete="CASCADE"), unique=True, nullable=False
+        ForeignKey("libros.id", ondelete="CASCADE"),
+        unique=True, nullable=False
     )
     cantidad: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
@@ -164,13 +180,16 @@ class CotizacionDolar(Base):
 
     __tablename__ = "cotizaciones_dolar"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True)
     tipo_id: Mapped[int] = mapped_column(
         ForeignKey("tipos_cotizacion.id", ondelete="CASCADE"), nullable=False
     )
     fecha: Mapped[date] = mapped_column(Date, nullable=False)
-    valor_compra: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False)
-    valor_venta: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False)
+    valor_compra: Mapped[Decimal] = mapped_column(
+        Numeric(12, 4), nullable=False)
+    valor_venta: Mapped[Decimal] = mapped_column(
+        Numeric(12, 4), nullable=False)
 
     # Constraint único: un tipo de cotización por fecha
     __table_args__ = (
@@ -178,4 +197,5 @@ class CotizacionDolar(Base):
     )
 
     # Relación
-    tipo: Mapped["TipoCotizacion"] = relationship(back_populates="cotizaciones")
+    tipo: Mapped["TipoCotizacion"] = relationship(
+        back_populates="cotizaciones")

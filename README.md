@@ -17,8 +17,8 @@ Además se realizan consultas a APIs externas (cotizaciones del dólar) para reg
 - Ejercicio 04: Creación de las tablas del sistema con tipos de datos y relaciones. ✓
 - Ejercicio 05: Migración de datos (CSV → SQL) y poblado de la base. ✓
 - Ejercicio 06: Repositorios con persistencia en la base de datos (SQLAlchemy). ✓
-- Ejercicio 07: API del dólar + dotenv. ⏳
-- Ejercicio 08: Nuevas opciones de menú (cotizaciones por API, precios bimonetarios, exportación CSV). ⏳
+- Ejercicio 07: API del dólar + dotenv. ✓
+- Ejercicio 08: Nuevas opciones de menú (cotizaciones por API, precios bimonetarios, exportación CSV). ✓
 
 ## Ejecución
 
@@ -42,6 +42,20 @@ Para migrar los CSV del TP1 a la base de datos y generar los scripts `.sql`:
 PYTHONPATH=src .venv/bin/python -m book_manager.migrations.migrations
 ```
 
-Los archivos `.sql` se generan en `src/book_manager/migrations/sql` y los datos se cargan en la base indicada por `DATABASE_URL`.
+Los archivos `.sql` se generan en `src/book_manager/migrations/sql` y los datos se cargan en la base de datos indicada por las variables de entorno.
 
-> El Sprint 2 reemplaza la persistencia en archivos por la base de datos relacional (SQLite + SQLAlchemy), cuya implementación se completa a lo largo de los ejercicios 02 a 08.
+## Base de datos Supabase (PostgreSQL)
+
+El Sprint 2 persiste en una base de datos relacional de [Supabase](https://supabase.com/) (PostgreSQL) mediante el ORM SQLAlchemy. La conexión se configura con variables de entorno definidas en `.env`:
+
+| Variable | Uso |
+| --- | --- |
+| `DATABASE_URL` | Pooler en modo transacción (puerto 6543). Lo usa la aplicación. |
+| `DIRECT_URL` | Pooler en modo sesión (puerto 5432). Lo usan las migraciones/DDL. |
+| `SUPABASE_DB_PASSWORD` | Contraseña de la base. Se inyecta en las URL si contienen `[YOUR-PASSWORD]`. |
+
+La URL de conexión se obtiene en el panel de Supabase en *Connect → ORM* (`DIRECT_URL`). El driver de PostgreSQL (`psycopg2-binary`) se declara en `requirements.txt`.
+
+> Si no se definen las variables de Supabase, el sistema cae a SQLite local (`sqlite:///book_manager.db`) para desarrollo.
+
+> El Sprint 2 reemplaza la persistencia en archivos por la base de datos relacional (Supabase + SQLAlchemy), cuya implementación se completa a lo largo de los ejercicios 02 a 08.

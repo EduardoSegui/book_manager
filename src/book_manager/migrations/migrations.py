@@ -12,7 +12,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import delete
+from sqlalchemy import delete, text
 from sqlalchemy.orm import Session
 
 from book_manager.database.connection import ConexionDB
@@ -266,6 +266,19 @@ def _escribir_sql(
 # Poblado de la base de datos
 # ---------------------------------------------------------------------------
 
+# Tablas con clave primaria autoincremental (secuencia) en PostgreSQL.
+_TABLAS_CON_SECUENCIA = (
+    "generos",
+    "editoriales",
+    "monedas",
+    "tipos_cotizacion",
+    "libros",
+    "precios",
+    "stock",
+    "cotizaciones_dolar",
+)
+
+
 def _vaciar_tablas(sesion: Session) -> None:
     """Borra los registros de las tablas respetando el orden de las FK."""
     orden = (
@@ -291,6 +304,26 @@ def _insertar(
     """Inserta las filas indicadas creando instancias del modelo ORM."""
     for fila in filas:
         sesion.add(modelo(**fila))
+
+
+def _reiniciar_secuencias(sesion: Session) -> None:
+    """Ajusta las secuencias de PostgreSQL tras insertar IDs explícitos.
+
+    Al migrar se insertan identificadores concretos, por lo que la secuencia
+    (SERIAL) de cada tabla quedaría en su valor inicial y un alta posterior
+    chocaría con una clave primaria repetida. En SQLite (sin secuencias) no
+    hace nada.
+    """
+    if sesion.get_bind().dialect.name != "postgresql":
+        return
+    sesion.flush()
+    for tabla in _TABLAS_CON_SECUENCIA:
+        sesion.execute(
+            text(
+                f"SELECT setval(pg_get_serial_sequence('{tabla}', 'id'), "
+                f"COALESCE((SELECT MAX(id) FROM {tabla}), 1))"
+            )
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -381,6 +414,7 @@ def migrar_datos(carpeta_csvs: str, carpeta_sqls: str) -> dict[str, int]:
         filas_cotizaciones,
     )
 
+    ConexionDB.inicializar(para_migraciones=True)
     ConexionDB.crear_tablas()
     with ConexionDB.sesion() as sesion:
         _vaciar_tablas(sesion)
@@ -388,11 +422,14 @@ def migrar_datos(carpeta_csvs: str, carpeta_sqls: str) -> dict[str, int]:
         _insertar(sesion, Editorial, filas_editoriales)
         _insertar(sesion, Moneda, filas_monedas)
         _insertar(sesion, TipoCotizacion, filas_tipos)
+        sesion.flush()
         _insertar(sesion, Libro, filas_libros)
+        sesion.flush()
         _insertar(sesion, LibroGenero, filas_libro_genero)
         _insertar(sesion, Precio, filas_precios)
         _insertar(sesion, Stock, filas_stock)
         _insertar(sesion, CotizacionDolar, filas_cotizaciones)
+        _reiniciar_secuencias(sesion)
 
     return {
         "generos": len(filas_generos),
