@@ -66,7 +66,11 @@ class Consola:
 
         while True:
             self._mostrar_menu_principal()
-            opcion = input("\nSeleccione una opción: ").strip()
+            try:
+                opcion = input("\nSeleccione una opción: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print("\n\nEntrada no disponible. Cerrando Book Manager.")
+                break
 
             if opcion == "0":
                 print("\nGracias por usar Book Manager. ¡Hasta luego!")
@@ -90,7 +94,11 @@ class Consola:
             else:
                 print("\nOpción no válida. Intente nuevamente.")
 
-            input("\nPresione Enter para continuar...")
+            try:
+                input("\nPresione Enter para continuar...")
+            except (EOFError, KeyboardInterrupt):
+                print("\n\nEntrada no disponible. Cerrando Book Manager.")
+                break
             self._limpiar_pantalla()
 
     # ------------------------------------------------------------------

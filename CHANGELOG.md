@@ -13,6 +13,7 @@
 ## [Correcciones]
 - Restauración del método `_crear_libro` en la consola, que había quedado fusionado con `_buscar_libro`, y de la lectura de `generos_ids`.
 - Corrección en `_convertir` (`services.py`) para usar `elif`, evitando el error de conversión no soportada al pasar de dólares a pesos.
+- El menú de la consola finaliza de forma limpia ante `EOFError`/`KeyboardInterrupt`, necesario para ejecutar `main(import_default_data=False)` en el notebook sin interacción (Runtime → Run all).
 
 ## [Ejercicio 08]
 - Incorporación de nuevas opciones en la interfaz de consola (`console.py`) para interactuar con las cotizaciones de la API y reportes avanzados de precios.
