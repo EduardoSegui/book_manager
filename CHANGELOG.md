@@ -1,5 +1,12 @@
 # Registro de Cambios (Changelog)
 
+## Dia 19/10/2026
+
+## [Ejercicio 01]
+- Creación y configuración de la rama de trabajo `Sprint_3` a partir de la rama `Sprint_2`.
+- Creación de los directorios `src/book_manager/scraper/` y `src/book_manager/reportes/` para incorporar la estructura requerida del scraper (Scrapy) y reportes generados.
+- Incorporación de archivos `__init__.py` y `.gitkeep` para habilitar el empaquetado como módulos de Python y el versionado en Git.
+
 ## Dia 14/10/2026
 
 ## [Integración Supabase]
