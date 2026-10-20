@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Migración de datos desde archivos CSV hacia la base de datos.
+"""Migración y carga de datos hacia la base de datos.
 
-Ejercicio 05: Leer los archivos del TP1 (migrations/csv), poblar la base de
-datos relacional y generar los archivos `.sql` con las sentencias INSERT
-correspondientes, almacenándolos en migrations/sql.
+Sprint 2 - Ejercicio 05: Leer los archivos del TP1 (migrations/csv), poblar la
+base de datos relacional y generar los archivos `.sql` con las sentencias
+INSERT correspondientes, almacenándolos en migrations/sql.
+
+Sprint 3 - Ejercicio 02: Carga de datos secuencial desde archivos `.sql`
+(migrations/sql) hacia la base de datos relacional mediante SQLAlchemy.
 """
 
 import csv
@@ -444,11 +447,119 @@ def migrar_datos(carpeta_csvs: str, carpeta_sqls: str) -> dict[str, int]:
     }
 
 
+# ---------------------------------------------------------------------------
+# Carga secuencial desde archivos SQL (Sprint 3 - Ejercicio 02)
+# ---------------------------------------------------------------------------
+
+def _extraer_sentencias_sql(ruta_archivo: str) -> list[str]:
+    """Lee un archivo SQL y extrae las sentencias individuales separadas por ';'.
+
+    Args:
+        ruta_archivo: Ruta al archivo .sql.
+
+    Returns:
+        list[str]: Sentencias SQL limpias listas para ejecutar.
+    """
+    with open(ruta_archivo, "r", encoding="utf-8") as archivo:
+        lineas = archivo.readlines()
+
+    lineas_limpias: list[str] = []
+    for linea in lineas:
+        linea_strip = linea.strip()
+        if not linea_strip or linea_strip.startswith("--"):
+            continue
+        lineas_limpias.append(linea)
+
+    contenido = "".join(lineas_limpias)
+    return [
+        sentencia.strip()
+        for sentencia in contenido.split(";")
+        if sentencia.strip()
+    ]
+
+
+def cargar_datos_sql(
+    carpeta_sqls: str | None = None,
+    vaciar_antes: bool = True,
+) -> dict[str, int]:
+    """Carga e importa datos secuencialmente desde archivos .sql a la base.
+
+    Lee los scripts SQL en ``carpeta_sqls`` (por defecto ``migrations/sql/``),
+    extrae las sentencias DML (INSERT) y las ejecuta en orden secuencial sobre
+    la base de datos configurada en SQLAlchemy.
+
+    Args:
+        carpeta_sqls: Directorio con los scripts .sql. Si es None, utiliza
+            la carpeta 'sql' dentro del paquete migrations.
+        vaciar_antes: Si es True, limpia las tablas antes de insertar para
+            asegurar una carga limpia e idempotente.
+
+    Returns:
+        dict[str, int]: Cantidad de sentencias ejecutadas por cada archivo .sql.
+
+    Raises:
+        FileNotFoundError: Si no existe el directorio o no hay archivos .sql.
+        ValueError: Si ocurre algún error durante la ejecución de las
+            sentencias SQL.
+    """
+    if carpeta_sqls is None:
+        directorio_actual = os.path.dirname(os.path.abspath(__file__))
+        carpeta_sqls = os.path.join(directorio_actual, "sql")
+
+    if not os.path.isdir(carpeta_sqls):
+        raise FileNotFoundError(
+            f"No existe el directorio de archivos SQL: {carpeta_sqls}"
+        )
+
+    archivos_sql = sorted(
+        archivo for archivo in os.listdir(carpeta_sqls)
+        if archivo.endswith(".sql")
+    )
+    if not archivos_sql:
+        raise FileNotFoundError(
+            f"No se encontraron archivos .sql en: {carpeta_sqls}"
+        )
+
+    ConexionDB.inicializar(para_migraciones=True)
+    ConexionDB.crear_tablas()
+
+    conteo_por_archivo: dict[str, int] = {}
+
+    try:
+        with ConexionDB.sesion() as sesion:
+            if vaciar_antes:
+                _vaciar_tablas(sesion)
+
+            for nombre_archivo in archivos_sql:
+                ruta_completa = os.path.join(carpeta_sqls, nombre_archivo)
+                sentencias = _extraer_sentencias_sql(ruta_completa)
+                for sentencia in sentencias:
+                    sesion.execute(text(sentencia))
+                conteo_por_archivo[nombre_archivo] = len(sentencias)
+
+            _reiniciar_secuencias(sesion)
+    except Exception as error:
+        raise ValueError(
+            f"Error al cargar datos desde los archivos SQL: {error}"
+        ) from error
+
+    return conteo_por_archivo
+
+
 if __name__ == "__main__":
+    import sys
+
     _directorio = os.path.dirname(os.path.abspath(__file__))
     _carpeta_csvs = os.path.join(_directorio, "csv")
     _carpeta_sqls = os.path.join(_directorio, "sql")
-    _resultado = migrar_datos(_carpeta_csvs, _carpeta_sqls)
-    print("Migración completada:")
-    for _entidad, _cantidad in _resultado.items():
-        print(f"  - {_entidad}: {_cantidad}")
+
+    if "--from-sql" in sys.argv:
+        _resultado = cargar_datos_sql(_carpeta_sqls)
+        print("Carga desde SQL completada:")
+        for _archivo, _cantidad in _resultado.items():
+            print(f"  - {_archivo}: {_cantidad} sentencias")
+    else:
+        _resultado = migrar_datos(_carpeta_csvs, _carpeta_sqls)
+        print("Migración completada:")
+        for _entidad, _cantidad in _resultado.items():
+            print(f"  - {_entidad}: {_cantidad}")

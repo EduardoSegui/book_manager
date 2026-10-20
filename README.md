@@ -1,24 +1,20 @@
-# Book Manager - Sprint 2
+# Book Manager - Sprint 3
 
 ## Objetivo
-El objetivo principal de este proyecto es aplicar los conocimientos adquiridos en programación orientada a objetos, almacenamiento de datos en archivos para su persistencia.
+El objetivo principal de este proyecto es profundizar en la integración del sistema de gestión de libros con persistencia en base de datos relacional (PostgreSQL en Supabase / SQLite), incorporando web scraping para extracción de datos en tiempo real (Cúspide), importación secuencial mediante scripts SQL, generación de reportes y auditoría del sistema.
 
 ## Introducción y Contexto del problema
-A partir del Sprint 1 (aplicación de consola que gestiona el inventario de una librería persistiendo en archivos), en este Sprint 2 se amplía el alcance haciendo que la aplicación persista en una base de datos relacional mediante el ORM SQLAlchemy.
-
-La idea principal es realizar una migración de todos los datos cargados en los archivos (CSV) a tablas relacionales, consolidando las bases del manejo de bases de datos, la normalización, la conexión segura y la carga inicial.
-
-Además se realizan consultas a APIs externas (cotizaciones del dólar) para registrar las cotizaciones en la base de datos.
+A partir de la arquitectura consolidada en los Sprint 1 y Sprint 2, este Sprint 3 incorpora:
+- Inicialización y versionado sobre la rama `Sprint_3` con la estructura para `scraper` y `reportes`.
+- Carga e importación secuencial directa desde los archivos `.sql` generados previamente.
+- Integración de scraping mediante Scrapy para enriquecer la información de los libros del catálogo.
+- Comparación de precios internos contra precios de mercado extraídos de la web.
+- Generación de reportes tabulados en hojas de cálculo (Excel).
+- Mecanismo de auditoría de operaciones sobre el inventario.
 
 ## Estado del Sprint
-- Ejercicio 01: Inicialización y configuración de la herramienta de versionado (rama `Sprint_2`). ✓
-- Ejercicio 02: Clase `ConexionDB` para la conexión con SQLAlchemy. ✓
-- Ejercicio 03: Context manager para manejar las transacciones a la base de datos. ✓
-- Ejercicio 04: Creación de las tablas del sistema con tipos de datos y relaciones. ✓
-- Ejercicio 05: Migración de datos (CSV → SQL) y poblado de la base. ✓
-- Ejercicio 06: Repositorios con persistencia en la base de datos (SQLAlchemy). ✓
-- Ejercicio 07: API del dólar + dotenv. ✓
-- Ejercicio 08: Nuevas opciones de menú (cotizaciones por API, precios bimonetarios, exportación CSV). ✓
+- Ejercicio 01: Inicialización y configuración de la herramienta de versionado (rama `Sprint_3`), y carpetas `scraper/` y `reportes/`. ✓
+- Ejercicio 02: Carga de datos secuencial desde archivos SQL (`cargar_datos_sql`). ✓
 
 ## Ejecución
 
@@ -34,9 +30,17 @@ El sistema se ejecuta con los datos de precarga cargados desde `migrations/csv`.
 PYTHONPATH=src .venv/bin/python -c "from book_manager.main import main; main(import_default_data=False)"
 ```
 
-## Migración de datos (Ejercicio 05)
+## Carga e importación desde SQL (Sprint 3 - Ejercicio 02)
 
-Para migrar los CSV del TP1 a la base de datos y generar los scripts `.sql`:
+Para importar secuencialmente los datos desde los archivos `.sql` (`01_generos.sql` a `09_cotizaciones_dolar.sql`) hacia la base de datos:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m book_manager.migrations.migrations --from-sql
+```
+
+## Migración de datos (Sprint 2 - Ejercicio 05)
+
+Para migrar los CSV a la base de datos y regenerar los scripts `.sql`:
 
 ```bash
 PYTHONPATH=src .venv/bin/python -m book_manager.migrations.migrations
@@ -46,7 +50,7 @@ Los archivos `.sql` se generan en `src/book_manager/migrations/sql` y los datos 
 
 ## Base de datos Supabase (PostgreSQL)
 
-El Sprint 2 persiste en una base de datos relacional de [Supabase](https://supabase.com/) (PostgreSQL) mediante el ORM SQLAlchemy. La conexión se configura con variables de entorno definidas en `.env`:
+El sistema persiste en una base de datos relacional de [Supabase](https://supabase.com/) (PostgreSQL) mediante el ORM SQLAlchemy. La conexión se configura con variables de entorno definidas en `.env`:
 
 | Variable | Uso |
 | --- | --- |

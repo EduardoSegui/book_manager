@@ -1,5 +1,15 @@
 # Registro de Cambios (Changelog)
 
+## Dia 20/10/2026
+
+## [Ejercicio 02]
+- Implementación de la función `cargar_datos_sql` en `migrations.py` para la lectura y ejecución secuencial de sentencias SQL desde la carpeta `migrations/sql/` hacia la base de datos relacional con SQLAlchemy.
+- Procesamiento y ejecución transaccional atómica con `ConexionDB.sesion()`, asegurando limpieza previa (`_vaciar_tablas`) e idempotencia en la carga.
+- Implementación de la función auxiliar `_extraer_sentencias_sql` para omitir comentarios y separar comandos `INSERT` individuales delimitados por punto y coma.
+- Ajuste y sincronización automática de secuencias autoincrementales (`setval`) en PostgreSQL tras la inserción con claves primarias explícitas.
+- Manejo robusto de excepciones ante fallas de archivos o sintaxis SQL con mensajes descriptivos (`ValueError`) y rollback automático.
+- Integración e invocación de `cargar_datos_sql` en la celda del Ejercicio 02 dentro del notebook `03_Book_Manager_Grupo_XX.ipynb`, verificando la inserción de las tablas `generos`, `editoriales`, `monedas`, `tipos_cotizacion`, `libros`, `libro_genero`, `precios`, `stock` y `cotizaciones_dolar`.
+
 ## Dia 19/10/2026
 
 ## [Ejercicio 01]
