@@ -1,5 +1,7 @@
 .venv/
-.venv/
 __pycache__/
 notebooks/
 *.ipynb
+
+# Artefactos generados en tiempo de ejecución
+src/book_manager/reportes/alertas_precios.csv

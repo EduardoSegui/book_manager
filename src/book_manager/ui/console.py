@@ -813,23 +813,31 @@ class Consola:
                 "Fecha (YYYY-MM-DD, Enter para más reciente): ")
 
             resultado = self._servicio_precio.cotizar(
-                id_libro, id_moneda_origen, id_moneda_destino, id_tipo_cotizacion, fecha
+                id_libro,
+                id_moneda_origen,
+                id_moneda_destino,
+                id_tipo_cotizacion,
+                fecha,
             )
             if resultado is None:
-                print("\nEl libro no tiene precio cargado en la moneda de origen.")
+                print(
+                    "\nEl libro no tiene precio en la moneda de origen."
+                )
             else:
                 print(f"\nPrecio cotizado: {resultado}")
         except ValueError as e:
             print(f"\nError: {e}")
 
     def _ver_lista_precios_bimonetaria(self) -> None:
-        """Muestra la lista de precios de los libros en pesos y otra moneda seleccionada."""
+        """Muestra los precios de los libros en pesos y otra moneda."""
         self._mostrar_titulo("LISTA DE PRECIOS BIMONETARIA")
         try:
             monedas = self._servicio_moneda.leer_todos()
             monedas_destino = [m for m in monedas if m.codigo != "ARS"]
             if not monedas_destino:
-                print("\nNo hay monedas secundarias registradas en el sistema.")
+                print(
+                    "\nNo hay monedas secundarias registradas en el sistema."
+                )
                 return
 
             print("Monedas disponibles para comparar:")
@@ -874,7 +882,8 @@ class Consola:
 
             print(f"\n{'─' * 70}")
             print(
-                f"  PRECIOS BIMONETARIOS: {moneda_base.codigo} y {moneda_dest.codigo} "
+                f"  PRECIOS BIMONETARIOS: {moneda_base.codigo} y "
+                f"{moneda_dest.codigo} "
                 f"(Cotización {tipo_nombre}: ${cot.valor_venta:.2f})"
             )
             print(f"{'─' * 70}")
@@ -892,7 +901,9 @@ class Consola:
                 )
                 if p_dest is not None:
                     origen_txt = "Cotizado" if es_cot else "Directo"
-                    txt_dest = f"{moneda_dest.simbolo} {p_dest:.2f} ({origen_txt})"
+                    txt_dest = (
+                        f"{moneda_dest.simbolo} {p_dest:.2f} ({origen_txt})"
+                    )
                 else:
                     txt_dest = "Sin precio"
 
@@ -906,11 +917,12 @@ class Consola:
             print(f"\nError: {e}")
 
     def _exportar_precios_csv(self) -> None:
-        """Exporta los precios de los libros para todos los tipos de monedas a CSV."""
+        """Exporta los precios de los libros de todas las monedas a CSV."""
         self._mostrar_titulo("EXPORTAR PRECIOS A ARCHIVO CSV")
         try:
             ruta = self._pedir_texto(
-                "Ruta o nombre del archivo CSV (Enter para 'precios_monedas.csv'): ",
+                "Ruta o nombre del archivo CSV (Enter para "
+                "'precios_monedas.csv'): ",
                 obligatorio=False,
             )
             if not ruta:
@@ -925,19 +937,22 @@ class Consola:
                     tipos_cot[0],
                 )
                 print(
-                    f"\nTipos de cotización disponibles (defecto: [{tipo_defecto.id}] {tipo_defecto.nombre}):"
+                    f"\nTipos de cotización disponibles (defecto: "
+                    f"[{tipo_defecto.id}] {tipo_defecto.nombre}):"
                 )
                 for tc in tipos_cot:
                     print(f"  [{tc.id}] {tc.nombre}")
                 id_tipo_texto = self._pedir_texto(
-                    f"ID del tipo de cotización (Enter para '{tipo_defecto.nombre}'): ",
+                    f"ID del tipo de cotización (Enter para "
+                    f"'{tipo_defecto.nombre}'): ",
                     obligatorio=False,
                 )
                 id_tipo = int(
                     id_tipo_texto) if id_tipo_texto else tipo_defecto.id
 
             fecha = self._pedir_fecha(
-                "Fecha para cotizaciones (YYYY-MM-DD, Enter para más reciente): "
+                "Fecha para cotizaciones (YYYY-MM-DD, Enter para "
+                "más reciente): "
             )
 
             total = self._servicio_precio.exportar_precios_csv(
@@ -995,7 +1010,9 @@ class Consola:
         """Lista todo el stock."""
         stock = self._servicio_stock.leer_todos()
         self._mostrar_lista(
-            stock, lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades")
+            stock,
+            lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades",
+        )
 
     def _ver_stock_libro(self) -> None:
         """Muestra el stock de un libro."""
@@ -1054,14 +1071,18 @@ class Consola:
         """Muestra el stock sin disponibilidad."""
         stock = self._servicio_stock.sin_disponibilidad()
         self._mostrar_lista(
-            stock, lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades")
+            stock,
+            lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades",
+        )
 
     def _stock_bajo(self) -> None:
         """Muestra el stock bajo."""
         minimo = self._pedir_entero("Cantidad mínima: ", minimo=0)
         stock = self._servicio_stock.con_stock_bajo(minimo)
         self._mostrar_lista(
-            stock, lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades")
+            stock,
+            lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades",
+        )
 
     def _valor_inventario(self) -> None:
         """Calcula el valor del inventario."""
@@ -1123,7 +1144,10 @@ class Consola:
         cotizaciones = self._servicio_cotizacion.leer_todos()
         self._mostrar_lista(
             cotizaciones,
-            lambda c: f"[{c.id}] Tipo {c.tipo_id} - {c.fecha}: Compra {c.valor_compra} / Venta {c.valor_venta}",
+            lambda c: (
+                f"[{c.id}] Tipo {c.tipo_id} - {c.fecha}: "
+                f"Compra {c.valor_compra} / Venta {c.valor_venta}"
+            ),
         )
 
     def _ver_cotizacion(self) -> None:
@@ -1138,10 +1162,12 @@ class Consola:
             id_tipo, fecha)
         if cotizacion is None:
             print(
-                f"\nNo existe cotización para el tipo {id_tipo} en la fecha {fecha}.")
+                f"\nNo existe cotización para el tipo {id_tipo} "
+                f"en la fecha {fecha}.")
         else:
             print(
-                f"\nCotización - Tipo {cotizacion.tipo_id} - {cotizacion.fecha}")
+                f"\nCotización - Tipo {cotizacion.tipo_id} - "
+                f"{cotizacion.fecha}")
             print(f"  Valor de compra: {cotizacion.valor_compra}")
             print(f"  Valor de venta: {cotizacion.valor_venta}")
             print(f"  Spread: {cotizacion.spread}")
@@ -1153,7 +1179,10 @@ class Consola:
             id_tipo)
         self._mostrar_lista(
             cotizaciones,
-            lambda c: f"[{c.id}] {c.fecha}: Compra {c.valor_compra} / Venta {c.valor_venta}",
+            lambda c: (
+                f"[{c.id}] {c.fecha}: Compra {c.valor_compra} / "
+                f"Venta {c.valor_venta}"
+            ),
         )
 
     def _crear_cotizacion(self) -> None:
@@ -1194,7 +1223,8 @@ class Consola:
                 id_tipo, fecha)
             if cotizacion is None:
                 print(
-                    f"\nNo existe cotización para el tipo {id_tipo} en la fecha {fecha}.")
+                    f"\nNo existe cotización para el tipo {id_tipo} "
+                    f"en la fecha {fecha}.")
                 return
 
             print(f"\nValor de compra actual: {cotizacion.valor_compra}")
@@ -1224,7 +1254,8 @@ class Consola:
                     print("\nCotización eliminada exitosamente.")
                 else:
                     print(
-                        f"\nNo existe cotización para el tipo {id_tipo} en la fecha {fecha}.")
+                        f"\nNo existe cotización para el tipo {id_tipo} "
+                        f"en la fecha {fecha}.")
         except ValueError as e:
             print(f"\nError: {e}")
 
@@ -1255,13 +1286,15 @@ class Consola:
             print("Consultando cotizaciones desde la API del dólar...")
             cotizaciones = self._servicio_cotizacion.obtener_cotizaciones()
             print(
-                f"\nSe obtuvieron y registraron {len(cotizaciones)} cotizaciones exitosamente:"
+                f"\nSe obtuvieron y registraron {len(cotizaciones)} "
+                f"cotizaciones exitosamente:"
             )
             for cot in cotizaciones:
                 tipo = self._servicio_tipo_cotizacion.leer_por_id(cot.tipo_id)
                 nombre_tipo = tipo.nombre if tipo else f"Tipo {cot.tipo_id}"
                 print(
-                    f"  - {nombre_tipo:<22} Compra: ${cot.valor_compra:>8.2f} | "
+                    f"  - {nombre_tipo:<22} Compra: "
+                    f"${cot.valor_compra:>8.2f} | "
                     f"Venta: ${cot.valor_venta:>8.2f} | Fecha: {cot.fecha}"
                 )
         except ValueError as e:

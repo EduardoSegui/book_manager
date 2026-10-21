@@ -452,7 +452,7 @@ def migrar_datos(carpeta_csvs: str, carpeta_sqls: str) -> dict[str, int]:
 # ---------------------------------------------------------------------------
 
 def _extraer_sentencias_sql(ruta_archivo: str) -> list[str]:
-    """Lee un archivo SQL y extrae las sentencias individuales separadas por ';'.
+    """Lee un archivo SQL y extrae las sentencias separadas por ';'.
 
     Args:
         ruta_archivo: Ruta al archivo .sql.
@@ -495,7 +495,7 @@ def cargar_datos_sql(
             asegurar una carga limpia e idempotente.
 
     Returns:
-        dict[str, int]: Cantidad de sentencias ejecutadas por cada archivo .sql.
+        dict[str, int]: Cantidad de sentencias por cada archivo .sql.
 
     Raises:
         FileNotFoundError: Si no existe el directorio o no hay archivos .sql.

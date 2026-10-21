@@ -15,6 +15,7 @@ import scrapy
 from scrapy.http import Response
 
 from book_manager.scraper.loaders import CuspideItemLoader
+from book_manager.scraper.pipelines import PIPELINES_CUSPIDE
 
 
 class CuspideSpider(scrapy.Spider):
@@ -34,15 +35,14 @@ class CuspideSpider(scrapy.Spider):
         "CONCURRENT_REQUESTS_PER_DOMAIN": 4,
         "COOKIES_ENABLED": False,
         "LOG_LEVEL": "INFO",
-        "ITEM_PIPELINES": {
-            "book_manager.scraper.pipelines.CuspideValidacionPipeline": 100,
-        },
+        "ITEM_PIPELINES": PIPELINES_CUSPIDE,
     }
 
     def __init__(
         self,
         libros: Optional[List[Dict[str, Any]]] = None,
         max_resultados: int = 10,
+        umbral_diferencia: Optional[float] = None,
         *args: Any,
         **kwargs: Any,
     ) -> None:
@@ -52,9 +52,14 @@ class CuspideSpider(scrapy.Spider):
             libros: Lista opcional de libros internos a consultar.
                 Si no se provee, se cargan los libros activos del catálogo.
             max_resultados: Cantidad máxima de publicaciones web por libro.
+            umbral_diferencia: Diferencia de precios a partir de la cual se
+                genera una alerta en el archivo CSV (Ejercicio 04).
         """
         super().__init__(*args, **kwargs)
         self.max_resultados = int(max_resultados)
+        self.umbral_diferencia = (
+            float(umbral_diferencia) if umbral_diferencia is not None else None
+        )
         if libros is not None:
             self.libros = libros
         else:

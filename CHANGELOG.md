@@ -1,5 +1,15 @@
 # Registro de Cambios (Changelog)
 
+## Dia 22/10/2026
+
+## [Ejercicio 04]
+- Comparación del precio interno contra el precio web de cada publicación scrapeada, con diferencia en pesos, porcentaje de diferencia y tipificación de la alerta (PRECIO_WEB_MAYOR, PRECIO_WEB_MENOR, PRECIO_IGUAL, SIN_PRECIO_INTERNO).
+- Solicitud de la diferencia de precios admitida al usuario antes de cada ejecución del scraper, con validación del valor ingresado.
+- Generación del archivo CSV de alertas (reportes/alertas_precios.csv) en cada ejecución del scraper, con precio interno, precio web, diferencia, porcentaje y umbral configurado.
+- Análisis del CSV de alertas: total de alertas, cantidad de casos con precio web mayor, menor o igual, diferencia promedio, diferencia máxima y libros con mayor brecha de precio.
+- Descarga del archivo CSV de alertas para su análisis (en Colab, mediante files.download).
+- Corrección del pipeline de alertas, que no se ejecutaba por el orden de prioridad de las configuraciones de Scrapy y por lo tanto nunca generaba el CSV. 
+
 ## Dia 21/10/2026
 
 ## [Ejercicio 03]

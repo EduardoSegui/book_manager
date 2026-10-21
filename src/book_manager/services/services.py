@@ -302,7 +302,8 @@ class ServicioGenero(ServicioBase[Genero]):
                   if entidad.id in libro.generos_ids]
         if en_uso:
             raise ValueError(
-                f"{self._etiqueta.capitalize()} '{entidad.nombre}' no se puede "
+                f"{self._etiqueta.capitalize()} '{entidad.nombre}' no "
+                f"se puede "
                 f"eliminar porque está asociado a {len(en_uso)} libro(s): "
                 f"{_resumen(en_uso)}."
             )
@@ -330,7 +331,8 @@ class ServicioEditorial(ServicioBase[Editorial]):
                   if libro.editorial_id == entidad.id]
         if en_uso:
             raise ValueError(
-                f"{self._etiqueta.capitalize()} '{entidad.nombre}' no se puede "
+                f"{self._etiqueta.capitalize()} '{entidad.nombre}' no "
+                f"se puede "
                 f"eliminar porque publica {len(en_uso)} libro(s): "
                 f"{_resumen(en_uso)}."
             )
@@ -352,7 +354,7 @@ class ServicioMoneda(ServicioBase[Moneda]):
 
 
 class ServicioTipoCotizacion(ServicioBase[TipoCotizacion]):
-    """Servicio con la lógica de negocio de los tipos de cotización del dólar."""
+    """Servicio con la lógica de los tipos de cotización del dólar."""
 
     _etiqueta = "el tipo de cotización"
     _campos_unicos = ("nombre",)
@@ -362,7 +364,7 @@ class ServicioTipoCotizacion(ServicioBase[TipoCotizacion]):
         repositorio: IRepositorio[TipoCotizacion],
         repositorio_cotizacion: IRepositorioCotizacionDolar,
     ) -> None:
-        """Inicializa el servicio con los repositorios de tipo y de cotización."""
+        """Inicializa el servicio con los repositorios de tipo y cotización."""
         super().__init__(repositorio)
         self._repositorio_cotizacion = repositorio_cotizacion
 
@@ -372,7 +374,8 @@ class ServicioTipoCotizacion(ServicioBase[TipoCotizacion]):
             entidad.id)
         if cotizaciones:
             raise ValueError(
-                f"El tipo de cotización '{entidad.nombre}' no se puede eliminar "
+                f"El tipo de cotización '{entidad.nombre}' no se puede "
+                f"eliminar "
                 f"porque tiene {len(cotizaciones)} cotización(es) cargada(s)."
             )
 
@@ -392,7 +395,7 @@ class ServicioLibro(ServicioBase[Libro]):
         repositorio_precio: IRepositorio[Precio],
         repositorio_stock: IRepositorioStock,
     ) -> None:
-        """Inicializa el servicio con los repositorios que valida y consulta."""
+        """Inicializa el servicio con los repositorios de validación."""
         super().__init__(repositorio)
         self._repositorio_genero = repositorio_genero
         self._repositorio_editorial = repositorio_editorial
@@ -412,15 +415,22 @@ class ServicioLibro(ServicioBase[Libro]):
 
     def leer_por_isbn(self, isbn: str) -> Optional[Libro]:
         """Busca un libro por su ISBN, con o sin guiones."""
-        return self.leer_por_campo("isbn", isbn.replace("-", "").replace(" ", ""))
+        return self.leer_por_campo(
+            "isbn", isbn.replace("-", "").replace(" ", "")
+        )
 
     def leer_activos(self) -> List[Libro]:
         """Lista los libros dados de alta en el catálogo."""
-        return [libro for libro in self._repositorio.leer_todos() if libro.activo]
+        return [
+            libro for libro in self._repositorio.leer_todos() if libro.activo
+        ]
 
     def leer_inactivos(self) -> List[Libro]:
         """Lista los libros dados de baja del catálogo."""
-        return [libro for libro in self._repositorio.leer_todos() if not libro.activo]
+        return [
+            libro for libro in self._repositorio.leer_todos()
+            if not libro.activo
+        ]
 
     def dar_de_baja(self, id: int) -> Libro:
         """Saca un libro del catálogo conservando su historial."""
@@ -456,16 +466,21 @@ class ServicioLibro(ServicioBase[Libro]):
         """Impide borrar un libro que tiene precios o stock asociado."""
         precios = [precio for precio in self._repositorio_precio.leer_todos()
                    if precio.libro_id == entidad.id]
-        if precios or self._repositorio_stock.leer_por_libro(entidad.id) is not None:
+        stock = self._repositorio_stock.leer_por_libro(entidad.id)
+        if precios or stock is not None:
             raise ValueError(
-                f"El libro '{entidad.titulo}' no se puede eliminar porque tiene "
-                f"{len(precios)} precio(s) y/o stock asociado. Si solo se quiere "
+                f"El libro '{entidad.titulo}' no se puede eliminar "
+                f"porque tiene {len(precios)} precio(s) y/o stock asociado. "
+                f"Si solo se quiere "
                 "sacarlo del catálogo, utilice la baja lógica."
             )
 
     def _validar_referencias(self, entidad: Libro) -> None:
         """Valida que la editorial y los géneros referenciados existan."""
-        if self._repositorio_editorial.leer_por_id(entidad.editorial_id) is None:
+        editorial = self._repositorio_editorial.leer_por_id(
+            entidad.editorial_id
+        )
+        if editorial is None:
             raise ValueError(
                 f"No existe la editorial con el ID {entidad.editorial_id}."
             )
@@ -500,7 +515,7 @@ class ServicioCotizacionDolar:
         repositorio_tipo: IRepositorio[TipoCotizacion],
         repositorio_moneda: IRepositorio[Moneda],
     ) -> None:
-        """Inicializa el servicio con los repositorios de cotización, tipo y moneda."""
+        """Inicializa el servicio con sus repositorios de cotización y tipo."""
         self._repositorio = repositorio
         self._repositorio_tipo = repositorio_tipo
         self._repositorio_moneda = repositorio_moneda
@@ -537,7 +552,9 @@ class ServicioCotizacionDolar:
             key=lambda cotizacion: cotizacion.fecha,
         )
 
-    def leer_por_tipo_y_fecha(self, tipo_id: int, fecha: date) -> Optional[CotizacionDolar]:
+    def leer_por_tipo_y_fecha(
+        self, tipo_id: int, fecha: date
+    ) -> Optional[CotizacionDolar]:
         """Devuelve la cotización de un tipo en una fecha específica."""
         self._exigir_existente(tipo_id)
         for cotizacion in self._repositorio.leer_historico_por_tipo(tipo_id):
@@ -567,7 +584,8 @@ class ServicioCotizacionDolar:
         cotizacion = _cotizacion_aplicable(self._repositorio, tipo_id, fecha)
         if cotizacion is None:
             raise ValueError(
-                f"El tipo de cotización {tipo_id} no tiene cotizaciones cargadas."
+                f"El tipo de cotización {tipo_id} no tiene cotizaciones "
+                f"cargadas."
             )
         return _convertir(valor, cotizacion, origen.codigo, destino.codigo)
 
@@ -637,7 +655,8 @@ class ServicioCotizacionDolar:
 
         if not isinstance(datos, list):
             raise ValueError(
-                "La respuesta de la API del dólar debe ser una lista de cotizaciones."
+                "La respuesta de la API del dólar debe ser una lista "
+                "de cotizaciones."
             )
 
         registradas: List[CotizacionDolar] = []
@@ -756,7 +775,7 @@ class ServicioPrecio(ServicioBase[Precio]):
         repositorio_moneda: IRepositorio[Moneda],
         repositorio_cotizacion: IRepositorioCotizacionDolar,
     ) -> None:
-        """Inicializa el servicio con los repositorios que valida y consulta."""
+        """Inicializa el servicio con los repositorios de validación."""
         super().__init__(repositorio)
         self._repositorio_libro = repositorio_libro
         self._repositorio_moneda = repositorio_moneda
@@ -773,9 +792,13 @@ class ServicioPrecio(ServicioBase[Precio]):
         )
         precios = [precio for precio in self._repositorio.leer_todos()
                    if precio.libro_id == libro_id]
-        return sorted(precios, key=lambda precio: (precio.moneda_id, precio.fecha))
+        return sorted(
+            precios, key=lambda precio: (precio.moneda_id, precio.fecha)
+        )
 
-    def precio_vigente(self, libro_id: int, moneda_id: int) -> Optional[Precio]:
+    def precio_vigente(
+        self, libro_id: int, moneda_id: int
+    ) -> Optional[Precio]:
         """Devuelve el último precio cargado de un libro en una moneda."""
         return _precio_vigente(self._repositorio, libro_id, moneda_id)
 
@@ -789,7 +812,7 @@ class ServicioPrecio(ServicioBase[Precio]):
     ) -> Optional[Decimal]:
         """Cotiza el precio vigente de un libro en otra moneda.
 
-        Devuelve None si el libro no tiene precio cargado en la moneda de origen.
+        Devuelve None si el libro no tiene precio en la moneda de origen.
         """
         origen = self._leer_moneda(moneda_origen_id)
         destino = self._leer_moneda(moneda_destino_id)
@@ -800,9 +823,12 @@ class ServicioPrecio(ServicioBase[Precio]):
             self._repositorio_cotizacion, tipo_id, fecha)
         if cotizacion is None:
             raise ValueError(
-                f"El tipo de cotización {tipo_id} no tiene cotizaciones cargadas."
+                f"El tipo de cotización {tipo_id} no tiene cotizaciones "
+                f"cargadas."
             )
-        return _convertir(precio.valor, cotizacion, origen.codigo, destino.codigo)
+        return _convertir(
+            precio.valor, cotizacion, origen.codigo, destino.codigo
+        )
 
     def lista_precios_bimonetaria(
         self,
@@ -810,7 +836,7 @@ class ServicioPrecio(ServicioBase[Precio]):
         tipo_id: int,
         fecha: Optional[date] = None,
     ) -> List[Dict[str, Any]]:
-        """Genera la lista de precios bimonetaria de los libros (pesos y otra moneda).
+        """Genera la lista de precios bimonetaria de los libros.
 
         Calcula para cada libro su precio vigente en pesos (ARS) y en la moneda
         destino seleccionada, cotizando mediante el tipo de cotización si no
@@ -832,7 +858,8 @@ class ServicioPrecio(ServicioBase[Precio]):
         destino = self._leer_moneda(moneda_destino_id)
         if destino.codigo == CODIGO_MONEDA_BASE:
             raise ValueError(
-                f"La moneda de comparación debe ser distinta de {CODIGO_MONEDA_BASE}."
+                f"La moneda de comparación debe ser distinta de "
+                f"{CODIGO_MONEDA_BASE}."
             )
 
         moneda_base = next(
@@ -842,7 +869,8 @@ class ServicioPrecio(ServicioBase[Precio]):
         )
         if moneda_base is None:
             raise ValueError(
-                f"No se encuentra registrada la moneda base {CODIGO_MONEDA_BASE}."
+                f"No se encuentra registrada la moneda base "
+                f"{CODIGO_MONEDA_BASE}."
             )
 
         cotizacion = _cotizacion_aplicable(
@@ -850,7 +878,8 @@ class ServicioPrecio(ServicioBase[Precio]):
         )
         if cotizacion is None:
             raise ValueError(
-                f"El tipo de cotización {tipo_id} no tiene cotizaciones disponibles."
+                f"El tipo de cotización {tipo_id} no tiene cotizaciones "
+                f"disponibles."
             )
 
         filas: List[Dict[str, Any]] = []
@@ -865,7 +894,10 @@ class ServicioPrecio(ServicioBase[Precio]):
             if valor_destino is None and valor_base is not None:
                 try:
                     valor_destino = _convertir(
-                        valor_base, cotizacion, moneda_base.codigo, destino.codigo
+                        valor_base,
+                        cotizacion,
+                        moneda_base.codigo,
+                        destino.codigo,
                     )
                     es_cotizado = True
                 except ValueError:
@@ -888,9 +920,9 @@ class ServicioPrecio(ServicioBase[Precio]):
         tipo_id: Optional[int] = None,
         fecha: Optional[date] = None,
     ) -> int:
-        """Exporta los precios vigentes de los libros para todas las monedas a un archivo CSV.
+        """Exporta los precios vigentes de los libros a un archivo CSV.
 
-        Incluye tanto los precios directos como los calculados mediante conversión
+        Incluye los precios directos y los calculados por conversión
         de cotización si se especifica el tipo de cotización.
 
         Args:

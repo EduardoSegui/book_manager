@@ -15,6 +15,11 @@ A partir de la arquitectura consolidada en los Sprint 1 y Sprint 2, este Sprint 
 ## Estado del Sprint
 - Ejercicio 01: Inicialización y configuración de la herramienta de versionado (rama `Sprint_3`), y carpetas `scraper/` y `reportes/`. ✓
 - Ejercicio 02: Carga de datos secuencial desde archivos SQL (`cargar_datos_sql`). ✓
+- Ejercicio 03: Scraper de Cúspide con Scrapy (`CuspideSpider`), `CuspideItem`, `CuspideItemLoader` y `CuspideValidacionPipeline`. ✓
+- Ejercicio 04: Comparación del precio interno contra el precio web y generación del archivo CSV de alertas descargable. ✓
+- Ejercicio 05: Reporte en Excel con los precios comparados. ☐
+- Ejercicio 06: Decorador de auditoría de las operaciones del sistema. ☐
+- Ejercicio 07: Opciones de menú para scraping, reportes y auditoría. ☐
 
 ## Ejecución
 
@@ -29,6 +34,18 @@ El sistema se ejecuta con los datos de precarga cargados desde `migrations/csv`.
 ```bash
 PYTHONPATH=src .venv/bin/python -c "from book_manager.main import main; main(import_default_data=False)"
 ```
+
+## Scraping y alertas de precios (Sprint 3 - Ejercicios 03 y 04)
+
+El scraper busca en Cúspide únicamente los libros del catálogo interno (hasta 10 resultados por título) y extrae precio, imagen, formas de pago y descripción. En cada ejecución compara el precio interno con el precio web y genera el archivo CSV de alertas:
+
+```bash
+PYTHONPATH=src .venv/bin/python -c "from book_manager.scraper.runner import solicitar_umbral_y_ejecutar; solicitar_umbral_y_ejecutar()"
+```
+
+La diferencia de precios admitida para generar alertas es ingresada por el usuario antes de cada ejecución. El archivo se genera en `src/book_manager/reportes/alertas_precios.csv` con las columnas `fecha_alerta`, `libro_id`, `isbn`, `titulo_interno`, `precio_interno`, `titulo_web`, `precio_web`, `diferencia`, `porcentaje_diferencia`, `umbral_configurado`, `tipo_alerta` y `url_web`, y puede descargarse para su análisis (en Google Colab la descarga se realiza con `files.download`).
+
+El análisis del CSV generado está disponible con `resumen_estadistico_alertas` y la lectura de los registros con `leer_alertas_csv`, ambos en `book_manager.reportes.alertas`.
 
 ## Carga e importación desde SQL (Sprint 3 - Ejercicio 02)
 
