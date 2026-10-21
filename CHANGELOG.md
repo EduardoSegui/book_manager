@@ -1,5 +1,16 @@
 # Registro de Cambios (Changelog)
 
+## Dia 21/10/2026
+
+## [Ejercicio 03]
+- Implementación de la araña de scraping `CuspideSpider` (`cuspide_spider.py`) con Scrapy para la extracción de precios, URLs de imágenes, formas de pago y descripción detallada desde el sitio web de Cúspide (`cuspide.com`).
+- Restricción estricta de búsqueda únicamente a los libros del catálogo interno, limitando a un máximo de 10 los primeros resultados por búsqueda de título.
+- Implementación de `CuspideItem` (`items.py`) y del loader personalizado `CuspideItemLoader` (`loaders.py`) utilizando procesadores de entrada y salida (`MapCompose`, `TakeFirst`) para la normalización de precios en float, URLs absolutas de imagen y formateo de medios de pago.
+- Implementación de `CuspideValidacionPipeline` (`pipelines.py`) para validación y saneamiento de items, combinando formas de pago y precio, y calculando discrepancias respecto a los precios internos.
+- Implementación del ejecutor programático `ejecutar_scraper` (`runner.py`) mediante aislamiento en subprocesos (`multiprocessing`), garantizando compatibilidad con Scrapy 2.19 y ejecución segura en Jupyter Notebooks sin conflictos de reactor Twisted.
+- Incorporación de `scrapy==2.19.0` en `requirements.txt`.
+- Integración y verificación de la celda de ejecución del Ejercicio 03 en el notebook `03_Book_Manager_Grupo_XX.ipynb`.
+
 ## Dia 20/10/2026
 
 ## [Ejercicio 02]
