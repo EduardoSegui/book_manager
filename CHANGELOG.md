@@ -1,6 +1,16 @@
 # Registro de Cambios (Changelog)
 
-## Dia 22/10/2026
+## Dia 21/10/2026
+
+## [Ejercicio 05]
+- Implementación del módulo `reporte_excel.py` (`src/book_manager/reportes/`) para generar el reporte de comparación de precios en formato Excel, con los campos Libro, Precio interno, Precio web, Diferencia y Fecha de extracción.
+- Generación del archivo `reportes/reporte_precios.xlsx` en cada ejecución del scraper, con encabezado con formato, anchos de columna ajustados, formato de moneda y de fecha, filtros y panel de celdas inmovilizado.
+- Implementación del pipeline `ReporteExcelPipeline` (`pipelines.py`), que recolecta los precios comparados de cada publicación scrapeada y escribe el reporte al cerrar la araña.
+- Reporte generable de forma independiente a partir de los items scrapeados (`generar_reporte_excel`) o del archivo CSV de alertas del Ejercicio 04 (`generar_reporte_desde_alertas_csv`).
+- Funciones de lectura (`leer_reporte_excel`) y descarga (`descargar_reporte_excel`) del reporte, con soporte para la descarga en Google Colab mediante files.download.
+- Incorporación de `openpyxl==3.1.5` en `requirements.txt` y del artefacto generado en `.gitignore`.
+
+## Dia 21/10/2026
 
 ## [Ejercicio 04]
 - Comparación del precio interno contra el precio web de cada publicación scrapeada, con diferencia en pesos, porcentaje de diferencia y tipificación de la alerta (PRECIO_WEB_MAYOR, PRECIO_WEB_MENOR, PRECIO_IGUAL, SIN_PRECIO_INTERNO).

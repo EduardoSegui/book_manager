@@ -17,7 +17,7 @@ A partir de la arquitectura consolidada en los Sprint 1 y Sprint 2, este Sprint 
 - Ejercicio 02: Carga de datos secuencial desde archivos SQL (`cargar_datos_sql`). ✓
 - Ejercicio 03: Scraper de Cúspide con Scrapy (`CuspideSpider`), `CuspideItem`, `CuspideItemLoader` y `CuspideValidacionPipeline`. ✓
 - Ejercicio 04: Comparación del precio interno contra el precio web y generación del archivo CSV de alertas descargable. ✓
-- Ejercicio 05: Reporte en Excel con los precios comparados. ☐
+- Ejercicio 05: Reporte en Excel con los precios comparados (Libro, Precio interno, Precio web, Diferencia y Fecha de extracción). ✓
 - Ejercicio 06: Decorador de auditoría de las operaciones del sistema. ☐
 - Ejercicio 07: Opciones de menú para scraping, reportes y auditoría. ☐
 
@@ -46,6 +46,19 @@ PYTHONPATH=src .venv/bin/python -c "from book_manager.scraper.runner import soli
 La diferencia de precios admitida para generar alertas es ingresada por el usuario antes de cada ejecución. El archivo se genera en `src/book_manager/reportes/alertas_precios.csv` con las columnas `fecha_alerta`, `libro_id`, `isbn`, `titulo_interno`, `precio_interno`, `titulo_web`, `precio_web`, `diferencia`, `porcentaje_diferencia`, `umbral_configurado`, `tipo_alerta` y `url_web`, y puede descargarse para su análisis (en Google Colab la descarga se realiza con `files.download`).
 
 El análisis del CSV generado está disponible con `resumen_estadistico_alertas` y la lectura de los registros con `leer_alertas_csv`, ambos en `book_manager.reportes.alertas`.
+
+## Reporte de precios en Excel (Sprint 3 - Ejercicio 05)
+
+En cada ejecución del scraper se genera, además del CSV de alertas, el reporte de comparación de precios en formato Excel (`src/book_manager/reportes/reporte_precios.xlsx`) con las columnas **Libro**, **Precio interno**, **Precio web**, **Diferencia** y **Fecha de extracción**. El archivo puede descargarse para su análisis (en Google Colab la descarga se realiza con `files.download`).
+
+El reporte también puede generarse de forma independiente, a partir de los items scrapeados o del CSV de alertas ya generado:
+
+```bash
+PYTHONPATH=src .venv/bin/python -c "from book_manager.reportes.reporte_excel import generar_reporte_excel; generar_reporte_excel([])"
+PYTHONPATH=src .venv/bin/python -c "from book_manager.reportes.reporte_excel import generar_reporte_desde_alertas_csv; generar_reporte_desde_alertas_csv()"
+```
+
+Las funciones `leer_reporte_excel` y `descargar_reporte_excel` permiten inspeccionar y distribuir el reporte.
 
 ## Carga e importación desde SQL (Sprint 3 - Ejercicio 02)
 

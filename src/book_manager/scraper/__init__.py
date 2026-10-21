@@ -11,6 +11,9 @@ Solo trabaja con los libros del catálogo interno (máximo 10 resultados).
 
 Ejercicio 04: Comparar el precio interno con el precio web y generar alertas
 en formato CSV.
+
+Ejercicio 05: Generar un reporte en Excel con la comparación de precios
+(libro, precio interno, precio web, diferencia y fecha de extracción).
 """
 
 from book_manager.scraper.cuspide_spider import CuspideSpider
@@ -19,6 +22,7 @@ from book_manager.scraper.loaders import CuspideItemLoader
 from book_manager.scraper.pipelines import (
     AlertasPreciosPipeline,
     CuspideValidacionPipeline,
+    ReporteExcelPipeline,
 )
 from book_manager.scraper.runner import (
     ejecutar_scraper,
@@ -31,6 +35,7 @@ __all__ = [
     "CuspideItemLoader",
     "CuspideValidacionPipeline",
     "AlertasPreciosPipeline",
+    "ReporteExcelPipeline",
     "ejecutar_scraper",
     "solicitar_umbral_y_ejecutar",
 ]

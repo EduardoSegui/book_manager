@@ -6,9 +6,12 @@ los items recolectados por la araña.
 
 Ejercicio 04: Implementar pipeline de alertas de precios para comparar
 el precio interno contra el precio web y generar un archivo CSV descargable.
+
+Ejercicio 05: Implementar pipeline que genera el reporte de precios en
+formato Excel con el libro, el precio interno, el precio web, la diferencia
+y la fecha de extracción.
 """
 
-import os
 from typing import Any, Dict, List, Optional
 import scrapy
 from scrapy.exceptions import DropItem
@@ -20,11 +23,17 @@ from book_manager.reportes.alertas import (
     escribir_alertas_csv,
     obtener_ruta_alertas_csv,
 )
+from book_manager.reportes.reporte_excel import (
+    construir_fila_reporte,
+    escribir_reporte_excel,
+    obtener_ruta_reporte_excel,
+)
 from book_manager.scraper.items import CuspideItem
 
 PIPELINES_CUSPIDE: Dict[str, int] = {
     "book_manager.scraper.pipelines.CuspideValidacionPipeline": 100,
     "book_manager.scraper.pipelines.AlertasPreciosPipeline": 300,
+    "book_manager.scraper.pipelines.ReporteExcelPipeline": 400,
 }
 
 
@@ -152,6 +161,64 @@ class AlertasPreciosPipeline:
         mensaje = (
             "Archivo de alertas generado con %d registros en '%s'.",
             len(self.items_alertas),
+            self.ruta_archivo,
+        )
+        if araña is not None:
+            araña.logger.info(*mensaje)
+        else:
+            print(mensaje[0] % mensaje[1:])
+
+
+class ReporteExcelPipeline:
+    """Genera el reporte de comparación de precios en formato Excel.
+
+    Ejercicio 05: Generar un reporte en excel con los campos Libro, Precio
+    interno, Precio web, Diferencia y Fecha de extracción. El archivo se
+    genera en cada ejecución del scraper y queda disponible para su
+    descarga y análisis.
+    """
+
+    def __init__(self, ruta_archivo: Optional[str] = None) -> None:
+        """Inicializa la ruta de destino del archivo Excel del reporte."""
+        self.ruta_archivo = obtener_ruta_reporte_excel(ruta_archivo)
+        self.filas_reporte: List[Dict[str, Any]] = []
+        self.crawler: Optional[Any] = None
+
+    @classmethod
+    def from_crawler(cls, crawler: Any) -> "ReporteExcelPipeline":
+        """Instancia el pipeline leyendo la configuración del crawler."""
+        pipeline = cls(ruta_archivo=crawler.settings.get("REPORTE_EXCEL_PATH"))
+        pipeline.crawler = crawler
+        return pipeline
+
+    def _obtener_spider(self, spider: Optional[scrapy.Spider]) -> Any:
+        """Devuelve la araña en ejecución para leer su configuración."""
+        if spider is not None:
+            return spider
+        if self.crawler is not None:
+            return getattr(self.crawler, "spider", None)
+        return None
+
+    def open_spider(self, spider: Optional[scrapy.Spider] = None) -> None:
+        """Inicializa la lista de filas antes de procesar."""
+        self.filas_reporte = []
+
+    def process_item(self, item: CuspideItem) -> CuspideItem:
+        """Registra la fila del reporte correspondiente al item."""
+        self.filas_reporte.append(construir_fila_reporte(item))
+        return item
+
+    def close_spider(self, spider: Optional[scrapy.Spider] = None) -> None:
+        """Escribe el reporte Excel con todas las filas recolectadas."""
+        if not self.ruta_archivo:
+            return
+
+        escribir_reporte_excel(self.filas_reporte, self.ruta_archivo)
+
+        araña = self._obtener_spider(spider)
+        mensaje = (
+            "Reporte Excel generado con %d registros en '%s'.",
+            len(self.filas_reporte),
             self.ruta_archivo,
         )
         if araña is not None:

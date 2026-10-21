@@ -5,3 +5,5 @@ notebooks/
 
 # Artefactos generados en tiempo de ejecución
 src/book_manager/reportes/alertas_precios.csv
+src/book_manager/reportes/reporte_precios.xlsx
+src/precios_monedas*.csv
