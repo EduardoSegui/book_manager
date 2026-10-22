@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from book_manager.database.connection import ConexionDB
 from book_manager.entities.entities import (
+    Auditoria,
     CotizacionDolar,
     Editorial,
     EntidadBase,
@@ -404,6 +405,17 @@ class RepositorioPrecio(RepositorioBase[Precio, orm.Precio]):
 
     _modelo = orm.Precio
     _clase_entidad = Precio
+
+
+class RepositorioAuditoria(RepositorioBase[Auditoria, orm.Auditoria]):
+    """Repositorio para la entidad Auditoria.
+
+    Sprint 3 - Ejercicio 06: Persiste los registros de auditoría de las
+    operaciones ejecutadas por el sistema.
+    """
+
+    _modelo = orm.Auditoria
+    _clase_entidad = Auditoria
 
 
 class RepositorioLibro(RepositorioBase[Libro, orm.Libro]):

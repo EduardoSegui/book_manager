@@ -18,7 +18,7 @@ A partir de la arquitectura consolidada en los Sprint 1 y Sprint 2, este Sprint 
 - Ejercicio 03: Scraper de Cúspide con Scrapy (`CuspideSpider`), `CuspideItem`, `CuspideItemLoader` y `CuspideValidacionPipeline`. ✓
 - Ejercicio 04: Comparación del precio interno contra el precio web y generación del archivo CSV de alertas descargable. ✓
 - Ejercicio 05: Reporte en Excel con los precios comparados (Libro, Precio interno, Precio web, Diferencia y Fecha de extracción). ✓
-- Ejercicio 06: Decorador de auditoría de las operaciones del sistema. ☐
+- Ejercicio 06: Decorador de auditoría de las operaciones del sistema. ✓
 - Ejercicio 07: Opciones de menú para scraping, reportes y auditoría. ☐
 
 ## Ejecución
@@ -59,6 +59,37 @@ PYTHONPATH=src .venv/bin/python -c "from book_manager.reportes.reporte_excel imp
 ```
 
 Las funciones `leer_reporte_excel` y `descargar_reporte_excel` permiten inspeccionar y distribuir el reporte.
+
+## Auditoría de las operaciones (Sprint 3 - Ejercicio 06)
+
+Todas las operaciones del sistema quedan registradas en la tabla `auditorias`, que almacena la **acción** ejecutada, la **fecha** del hecho y los **detalles** de la operación (servicio, datos involucrados y resultado). El registro se realiza mediante el decorador `auditar`, aplicado sobre los servicios de negocio, de modo que el código de negocio no debeシリコンar el registro:
+
+```python
+from book_manager.audit.auditoria import auditar
+
+class ServicioGenero(ServicioBase[Genero]):
+    @auditar("crear")
+    def crear(self, entidad: Genero) -> Genero:
+        ...
+```
+
+Las acciones auditadas incluyen las altas, modificaciones y bajas de todas las entidades (`crear_genero`, `actualizar_libro`, `eliminar_precio`, ...), los ingresos y egresos de stock (`ingresar_stock`, `egresar_stock`), la baja y el alta de libros del catálogo, la obtención de cotizaciones desde la API, la cotización de precios, la exportación de precios a CSV y la ejecución del scraping. Las operaciones fallidas también se registran, indicando el mensaje de error, y la excepción original se vuelve a lanzar sin alterarla.
+
+El historial puede consultarse desde la consola (opción **9. Auditoría del Sistema**) o programáticamente:
+
+```bash
+PYTHONPATH=src .venv/bin/python -c "
+from book_manager.database.connection import ConexionDB
+from book_manager.repositories.repositories import RepositorioAuditoria
+from book_manager.services.services import ServicioAuditoria
+ConexionDB.crear_tablas()
+servicio = ServicioAuditoria(RepositorioAuditoria())
+for registro in servicio.leer_recientes(10):
+    print(registro.fecha, registro.accion, registro.detalles)
+"
+```
+
+El servicio `ServicioAuditoria` permite registrar operaciones de forma explícita (`registrar`), consultar todos los movimientos (`leer_todos`), los más recientes (`leer_recientes`), los de una acción concreta (`leer_por_accion`) y el resumen de acciones auditadas (`acciones_registradas`).
 
 ## Carga e importación desde SQL (Sprint 3 - Ejercicio 02)
 

@@ -283,7 +283,11 @@ _TABLAS_CON_SECUENCIA = (
 
 
 def _vaciar_tablas(sesion: Session) -> None:
-    """Borra los registros de las tablas respetando el orden de las FK."""
+    """Borra los registros de las tablas respetando el orden de las FK.
+
+    La tabla de auditoría no se vacía: es el historial de las operaciones
+    del sistema y se conserva aunque se recarguen los datos del catálogo.
+    """
     orden = (
         CotizacionDolar,
         Stock,

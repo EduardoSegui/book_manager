@@ -11,6 +11,9 @@ de cada ejecución del scraper.
 Ejercicio 05: En cada ejecución se genera además el reporte de comparación
 de precios en formato Excel (libro, precio interno, precio web, diferencia
 y fecha de extracción).
+
+Sprint 3 - Ejercicio 06: La ejecución del scraper queda auditada, registrando
+la acción, la fecha y el detalle de la operación.
 """
 
 import json
@@ -21,6 +24,7 @@ from typing import Any, Dict, List, Optional
 
 from scrapy.crawler import CrawlerProcess
 
+from book_manager.audit.auditoria import auditar
 from book_manager.reportes.alertas import obtener_ruta_alertas_csv
 from book_manager.reportes.reporte_excel import obtener_ruta_reporte_excel
 from book_manager.scraper.cuspide_spider import CuspideSpider
@@ -70,6 +74,7 @@ def _trabajador_scraper(
     proceso.start()
 
 
+@auditar("scraping", entidad="cuspide")
 def ejecutar_scraper(
     libros: Optional[List[Dict[str, Any]]] = None,
     umbral_diferencia: float = 0.0,

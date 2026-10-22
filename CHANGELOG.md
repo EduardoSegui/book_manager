@@ -1,5 +1,19 @@
 # Registro de Cambios (Changelog)
 
+## Dia 22/10/2026
+
+## [Ejercicio 06]
+- Creación del decorador `auditar` (`src/book_manager/audit/auditoria.py`) que registra en la tabla de auditoría cada operación ejecutada por el sistema, con su acción, su fecha y el detalle de la operación (servicio, datos involucrados y resultado).
+- Implementación de la clase `Auditor` como punto único de registro, que persiste la auditoría mediante `RepositorioAuditoria` e informa por pantalla, sin interrumpir la operación auditada, si el registro no puede persistirse.
+- Creación de la entidad `Auditoria` (`entities.py`) y del modelo ORM `Auditoria` (`models.py`), que dan lugar a la tabla `auditorias` con las columnas `accion`, `fecha` y `detalles`.
+- Creación del repositorio `RepositorioAuditoria` y del servicio `ServicioAuditoria`, con los métodos `registrar`, `leer_todos`, `leer_recientes`, `leer_por_accion`, `acciones_registradas` y `eliminar`.
+- Decoración de las operaciones de los servicios (`crear`, `actualizar`, `eliminar`, `dar_de_baja`, `dar_de_alta`, `ingresar`, `egresar`, `cotizar`, `exportar_csv` y `obtener`) para que toda alta, modificación, baja y operación relevante del sistema quede auditada.
+- Auditoría de la ejecución del scraper de Cúspide (`scraper/runner.py`) y de la precarga de datos desde los archivos CSV (`main.py`).
+- Registro de las operaciones fallidas con el mensaje de error, conservando la excepción original para que la consola muestre el error al usuario.
+- Incorporación de la consulta del historial de auditoría en la consola (opción 9. Auditoría del Sistema) y del servicio de auditoría en la composición del sistema (`main.py`).
+- Incorporación de los alias `GeneroModel`, `EditorialModel`, `MonedaModel`, `TipoCotizacionModel`, `LibroModel`, `PrecioModel`, `StockModel`, `CotizacionDolarModel` y `AuditoriaModel` en `models.py`, para permitir la importación de los modelos con el sufijo `Model` que usa la plantilla de validación del TP.
+- Mejora de la consola: los submenúes cierran de forma limpia ante `EOFError`/`KeyboardInterrupt` y la cantidad de movimientos a mostrar admite el valor por defecto.
+
 ## Dia 21/10/2026
 
 ## [Ejercicio 05]

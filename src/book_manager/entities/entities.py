@@ -11,7 +11,7 @@ privados, propiedades de solo lectura y métodos que controlan el estado
 interno de cada entidad.
 """
 
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 
@@ -245,3 +245,35 @@ class CotizacionDolar(EntidadBase):
             raise ValueError(
                 "El valor de venta no puede ser menor al valor de compra.")
         return self
+
+
+class Auditoria(EntidadBase):
+    """Registro de auditoría de una operación realizada por el sistema.
+
+    Sprint 3 - Ejercicio 06: Cada operación ejecutada queda registrada con
+    la acción realizada, la fecha del hecho y el detalle de lo ocurrido.
+    """
+
+    accion: str = Field(
+        min_length=3,
+        max_length=50,
+        description="Acción auditada (por ejemplo: crear_genero).",
+    )
+    fecha: datetime = Field(
+        default_factory=datetime.now,
+        description="Momento en que se ejecutó la operación auditada.",
+    )
+    detalles: str = Field(
+        default="",
+        max_length=500,
+        description="Detalle de la operación auditada.",
+    )
+
+    @field_validator("accion")
+    @classmethod
+    def _accion_no_vacia(cls, valor: str) -> str:
+        """Normaliza la acción quitando espacios en blanco de los bordes."""
+        accion = valor.strip()
+        if not accion:
+            raise ValueError("La acción auditada no puede estar vacía.")
+        return accion

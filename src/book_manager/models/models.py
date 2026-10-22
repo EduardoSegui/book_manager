@@ -4,13 +4,14 @@
 Ejercicio 04: Tablas del sistema con tipos de datos y relaciones.
 """
 
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 
 from sqlalchemy import (
     Boolean,
     Date,
+    DateTime,
     ForeignKey,
     Integer,
     Numeric,
@@ -199,3 +200,40 @@ class CotizacionDolar(Base):
     # Relación
     tipo: Mapped["TipoCotizacion"] = relationship(
         back_populates="cotizaciones")
+
+
+class Auditoria(Base):
+    """Registro de auditoría de las operaciones del sistema.
+
+    Sprint 3 - Ejercicio 06: La tabla almacena la acción ejecutada, la fecha
+    del hecho y el detalle de la operación auditada.
+    """
+
+    __tablename__ = "auditorias"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True)
+    accion: Mapped[str] = mapped_column(
+        String(50), nullable=False, index=True)
+    fecha: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.now, index=True)
+    detalles: Mapped[str] = mapped_column(
+        String(500), default="", nullable=False)
+
+
+# ---------------------------------------------------------------------------
+# Alias de los modelos ORM
+# ---------------------------------------------------------------------------
+# La plantilla de validación del TP importa los modelos con el sufijo
+# "Model" (por ejemplo: "AuditoriaModel"). Estos alias permiten usar ambas
+# denominaciones sin duplicar la definición de las tablas.
+
+GeneroModel = Genero
+EditorialModel = Editorial
+MonedaModel = Moneda
+TipoCotizacionModel = TipoCotizacion
+LibroModel = Libro
+PrecioModel = Precio
+StockModel = Stock
+CotizacionDolarModel = CotizacionDolar
+AuditoriaModel = Auditoria
