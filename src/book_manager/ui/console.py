@@ -24,6 +24,20 @@ from book_manager.entities.entities import (
     Stock,
     TipoCotizacion,
 )
+from book_manager.reportes.alertas import (
+    descargar_archivo_alertas,
+    leer_alertas_csv,
+    obtener_ruta_alertas_csv,
+    resumen_estadistico_alertas,
+)
+from book_manager.reportes.reporte_excel import (
+    descargar_reporte_excel,
+    generar_reporte_desde_alertas_csv,
+    generar_reporte_excel,
+    leer_reporte_excel,
+    obtener_ruta_reporte_excel,
+)
+from book_manager.scraper.runner import ejecutar_scraper
 from book_manager.services.services import (
     ServicioAuditoria,
     ServicioCotizacionDolar,
@@ -102,6 +116,10 @@ class Consola:
                 elif opcion == "8":
                     self._menu_cotizaciones()
                 elif opcion == "9":
+                    self._ejecutar_scraping()
+                elif opcion == "10":
+                    self._generar_reporte()
+                elif opcion == "11":
                     self._menu_auditoria()
                 else:
                     print("\nOpción no válida. Intente nuevamente.")
@@ -170,11 +188,14 @@ class Consola:
                 print("Debe ingresar un número entero válido.")
 
     @staticmethod
-    def _pedir_decimal(mensaje: str) -> Decimal:
+    def _pedir_decimal(mensaje: str, defecto: Optional[Decimal] = None) -> Decimal:
         """Pide un número decimal al usuario."""
         while True:
             try:
-                return Decimal(input(mensaje).strip())
+                texto = input(mensaje).strip()
+                if not texto and defecto is not None:
+                    return defecto
+                return Decimal(texto)
             except InvalidOperation:
                 print("Debe ingresar un número válido.")
 
@@ -229,7 +250,9 @@ class Consola:
         print("  6. Gestión de Precios")
         print("  7. Gestión de Stock")
         print("  8. Gestión de Cotizaciones del Dólar")
-        print("  9. Auditoría del Sistema")
+        print("  9. Ejecutar scraping")
+        print(" 10. Generar reporte")
+        print(" 11. Ver historial de auditoría")
         print("  0. Salir")
 
     # ------------------------------------------------------------------
@@ -1401,7 +1424,85 @@ class Consola:
         for accion in sorted(resumen):
             print(f"  {accion:<28} {resumen[accion]:>5}")
 
-    def _mostrar_auditoria(self, registros: List[Auditoria]) -> None:
+    def _ejecutar_scraping(self) -> None:
+        """Ejecuta el scraper de Cúspide desde la consola."""
+        self._mostrar_titulo("EJECUTAR SCRAPING")
+        try:
+            umbral = self._pedir_decimal(
+                "Diferencia de precios admitida (Enter para 0.0): ",
+                defecto=Decimal(0),
+            )
+            print("\nEjecutando scraping de Cúspide. Esto puede tardar unos minutos...")
+            resultados = ejecutar_scraper(umbral_diferencia=float(umbral))
+            print(f"\nScraping finalizado. {len(resultados)} resultado(s) obtenido(s).")
+            ruta_alertas = obtener_ruta_alertas_csv()
+            ruta_reporte = obtener_ruta_reporte_excel()
+            print(f"  - Alertas CSV: {ruta_alertas}")
+            print(f"  - Reporte Excel: {ruta_reporte}")
+        except (EOFError, KeyboardInterrupt):
+            print("\n\nOperación cancelada.")
+        except Exception as e:
+            print(f"\nError al ejecutar el scraping: {e}")
+
+    def _generar_reporte(self) -> None:
+        """Genera o analiza reportes del scraping."""
+        self._mostrar_titulo("GENERAR REPORTE")
+        print("  1. Generar reporte Excel desde última extracción")
+        print("  2. Generar reporte Excel desde alertas CSV")
+        print("  3. Leer reporte Excel generado")
+        print("  4. Descargar reporte Excel (Colab)")
+        print("  5. Analizar archivo de alertas CSV")
+        print("  0. Volver")
+
+        opcion = input("\nSeleccione una opción: ").strip()
+
+        try:
+            if opcion == "1":
+                datos = leer_reporte_excel() if os.path.exists(obtener_ruta_reporte_excel()) else []
+                if not datos:
+                    print("\nNo hay datos para generar el reporte desde extracción previa.")
+                    print("Ejecute primero 'Ejecutar scraping'.")
+                    return
+                ruta = generar_reporte_excel(datos)
+                print(f"\nReporte generado: {ruta}")
+            elif opcion == "2":
+                ruta = generar_reporte_desde_alertas_csv()
+                print(f"\nReporte generado desde alertas CSV: {ruta}")
+            elif opcion == "3":
+                datos = leer_reporte_excel()
+                if not datos:
+                    print("\nNo hay reporte para leer.")
+                    return
+                print(f"\nRegistros en reporte: {len(datos)}")
+                for fila in datos[:20]:
+                    print(f"  - {fila}")
+                if len(datos) > 20:
+                    print(f"  ... y {len(datos)-20} registro(s) más")
+            elif opcion == "4":
+                ruta = descargar_reporte_excel()
+                print(f"\nReporte listo para descarga: {ruta}")
+            elif opcion == "5":
+                ruta = obtener_ruta_alertas_csv()
+                if not os.path.exists(ruta):
+                    print("\nNo existe el archivo de alertas CSV.")
+                    print("Ejecute primero 'Ejecutar scraping'.")
+                    return
+                alertas = leer_alertas_csv(ruta)
+                resultado = resumen_estadistico_alertas(alertas)
+                print("\nAnálisis de alertas:")
+                for clave, valor in resultado.items():
+                    print(f"  - {clave}: {valor}")
+                try:
+                    ruta_descarga = descargar_archivo_alertas(ruta)
+                    print(f"\nArchivo de alertas listo para descarga: {ruta_descarga}")
+                except Exception:
+                    pass
+        except (EOFError, KeyboardInterrupt):
+            print("\n\nOperación cancelada.")
+        except Exception as e:
+            print(f"\nError al generar/analizar reporte: {e}")
+
+    def _mostrar_auditoria(self, registros: List[Auditoria]):
         """Muestra una lista de registros de auditoría.
 
         Args:
