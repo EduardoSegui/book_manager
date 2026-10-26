@@ -1,5 +1,16 @@
 # Registro de Cambios (Changelog)
 
+## Dia 23/10/2026
+
+## [Ejercicio 07]
+- Incorporación en el menú principal de la consola de las opciones `9. Ejecutar scraping`, `10. Generar reporte` y `11. Ver historial de auditoría`, integrando el scraper, los reportes y la auditoría en la operación normal del sistema.
+- Implementación de `_ejecutar_scraping` (`console.py`), que solicita la diferencia de precios admitida (con valor por defecto `0.0`), ejecuta el scraper de Cúspide mediante `ejecutar_scraper`, informa la cantidad de resultados obtenidos y muestra las rutas del CSV de alertas y del reporte Excel generados.
+- Implementación de `_generar_reporte` (`console.py`) con un submenú para generar el reporte Excel desde la última extracción o desde el CSV de alertas, leer un reporte ya generado, descargarlo en Google Colab y analizar el archivo de alertas mediante `resumen_estadistico_alertas`.
+- Ampliación de `_pedir_decimal` para admitir un valor por defecto cuando el usuario presiona Enter, reutilizado en la configuración del umbral de scraping.
+- Actualización de la opción de auditoría del sistema al número `11` del menú principal, manteniendo la consulta de acciones registradas y del historial reciente.
+- Manejo de cancelación limpia (`EOFError`/`KeyboardInterrupt`) y de errores en las nuevas opciones, mostrando mensajes claros al usuario sin interrumpir la consola.
+- Corrección de la firma de `_mostrar_auditoria` para que no declare un tipo de retorno inexistente.
+
 ## Dia 22/10/2026
 
 ## [Ejercicio 06]
