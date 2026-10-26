@@ -2,6 +2,10 @@
 """Interfaz de consola del sistema Book Manager.
 
 Ejercicio 06: Interfaces gráficas del sistema que operan con CRUDs.
+
+Sprint 3 - Ejercicio 06: Se agrega la consulta del historial de auditoría del
+sistema, donde cada operación ejecutada queda registrada con su acción, su
+fecha y sus detalles.
 """
 
 import os
@@ -10,6 +14,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Callable, List, Optional, TypeVar
 
 from book_manager.entities.entities import (
+    Auditoria,
     CotizacionDolar,
     Editorial,
     Genero,
@@ -19,7 +24,22 @@ from book_manager.entities.entities import (
     Stock,
     TipoCotizacion,
 )
+from book_manager.reportes.alertas import (
+    descargar_archivo_alertas,
+    leer_alertas_csv,
+    obtener_ruta_alertas_csv,
+    resumen_estadistico_alertas,
+)
+from book_manager.reportes.reporte_excel import (
+    descargar_reporte_excel,
+    generar_reporte_desde_alertas_csv,
+    generar_reporte_excel,
+    leer_reporte_excel,
+    obtener_ruta_reporte_excel,
+)
+from book_manager.scraper.runner import ejecutar_scraper
 from book_manager.services.services import (
+    ServicioAuditoria,
     ServicioCotizacionDolar,
     ServicioEditorial,
     ServicioGenero,
@@ -46,6 +66,7 @@ class Consola:
         servicio_precio: ServicioPrecio,
         servicio_stock: ServicioStock,
         servicio_cotizacion: ServicioCotizacionDolar,
+        servicio_auditoria: ServicioAuditoria,
     ) -> None:
         """Inicializa la consola con los servicios del sistema."""
         self._servicio_genero = servicio_genero
@@ -56,6 +77,7 @@ class Consola:
         self._servicio_precio = servicio_precio
         self._servicio_stock = servicio_stock
         self._servicio_cotizacion = servicio_cotizacion
+        self._servicio_auditoria = servicio_auditoria
 
     def ejecutar(self) -> None:
         """Ejecuta el bucle principal de la consola."""
@@ -75,24 +97,35 @@ class Consola:
             if opcion == "0":
                 print("\nGracias por usar Book Manager. ¡Hasta luego!")
                 break
-            elif opcion == "1":
-                self._menu_generos()
-            elif opcion == "2":
-                self._menu_editoriales()
-            elif opcion == "3":
-                self._menu_monedas()
-            elif opcion == "4":
-                self._menu_tipos_cotizacion()
-            elif opcion == "5":
-                self._menu_libros()
-            elif opcion == "6":
-                self._menu_precios()
-            elif opcion == "7":
-                self._menu_stock()
-            elif opcion == "8":
-                self._menu_cotizaciones()
-            else:
-                print("\nOpción no válida. Intente nuevamente.")
+
+            try:
+                if opcion == "1":
+                    self._menu_generos()
+                elif opcion == "2":
+                    self._menu_editoriales()
+                elif opcion == "3":
+                    self._menu_monedas()
+                elif opcion == "4":
+                    self._menu_tipos_cotizacion()
+                elif opcion == "5":
+                    self._menu_libros()
+                elif opcion == "6":
+                    self._menu_precios()
+                elif opcion == "7":
+                    self._menu_stock()
+                elif opcion == "8":
+                    self._menu_cotizaciones()
+                elif opcion == "9":
+                    self._ejecutar_scraping()
+                elif opcion == "10":
+                    self._generar_reporte()
+                elif opcion == "11":
+                    self._menu_auditoria()
+                else:
+                    print("\nOpción no válida. Intente nuevamente.")
+            except (EOFError, KeyboardInterrupt):
+                print("\n\nEntrada no disponible. Cerrando Book Manager.")
+                break
 
             try:
                 input("\nPresione Enter para continuar...")
@@ -124,11 +157,26 @@ class Consola:
         mensaje: str,
         minimo: Optional[int] = None,
         maximo: Optional[int] = None,
+        defecto: Optional[int] = None,
     ) -> int:
-        """Pide un número entero al usuario."""
+        """Pide un número entero al usuario.
+
+        Args:
+            mensaje (str): Texto que se muestra al usuario.
+            minimo (Optional[int]): Valor mínimo aceptado.
+            maximo (Optional[int]): Valor máximo aceptado.
+            defecto (Optional[int]): Valor devuelto si el usuario no ingresa
+                ninguno.
+
+        Returns:
+            int: Número ingresado por el usuario.
+        """
         while True:
+            texto = input(mensaje).strip()
+            if not texto and defecto is not None:
+                return defecto
             try:
-                valor = int(input(mensaje).strip())
+                valor = int(texto)
                 if minimo is not None and valor < minimo:
                     print(f"El valor debe ser mayor o igual a {minimo}.")
                     continue
@@ -140,11 +188,14 @@ class Consola:
                 print("Debe ingresar un número entero válido.")
 
     @staticmethod
-    def _pedir_decimal(mensaje: str) -> Decimal:
+    def _pedir_decimal(mensaje: str, defecto: Optional[Decimal] = None) -> Decimal:
         """Pide un número decimal al usuario."""
         while True:
             try:
-                return Decimal(input(mensaje).strip())
+                texto = input(mensaje).strip()
+                if not texto and defecto is not None:
+                    return defecto
+                return Decimal(texto)
             except InvalidOperation:
                 print("Debe ingresar un número válido.")
 
@@ -199,6 +250,9 @@ class Consola:
         print("  6. Gestión de Precios")
         print("  7. Gestión de Stock")
         print("  8. Gestión de Cotizaciones del Dólar")
+        print("  9. Ejecutar scraping")
+        print(" 10. Generar reporte")
+        print(" 11. Ver historial de auditoría")
         print("  0. Salir")
 
     # ------------------------------------------------------------------
@@ -813,23 +867,31 @@ class Consola:
                 "Fecha (YYYY-MM-DD, Enter para más reciente): ")
 
             resultado = self._servicio_precio.cotizar(
-                id_libro, id_moneda_origen, id_moneda_destino, id_tipo_cotizacion, fecha
+                id_libro,
+                id_moneda_origen,
+                id_moneda_destino,
+                id_tipo_cotizacion,
+                fecha,
             )
             if resultado is None:
-                print("\nEl libro no tiene precio cargado en la moneda de origen.")
+                print(
+                    "\nEl libro no tiene precio en la moneda de origen."
+                )
             else:
                 print(f"\nPrecio cotizado: {resultado}")
         except ValueError as e:
             print(f"\nError: {e}")
 
     def _ver_lista_precios_bimonetaria(self) -> None:
-        """Muestra la lista de precios de los libros en pesos y otra moneda seleccionada."""
+        """Muestra los precios de los libros en pesos y otra moneda."""
         self._mostrar_titulo("LISTA DE PRECIOS BIMONETARIA")
         try:
             monedas = self._servicio_moneda.leer_todos()
             monedas_destino = [m for m in monedas if m.codigo != "ARS"]
             if not monedas_destino:
-                print("\nNo hay monedas secundarias registradas en el sistema.")
+                print(
+                    "\nNo hay monedas secundarias registradas en el sistema."
+                )
                 return
 
             print("Monedas disponibles para comparar:")
@@ -874,7 +936,8 @@ class Consola:
 
             print(f"\n{'─' * 70}")
             print(
-                f"  PRECIOS BIMONETARIOS: {moneda_base.codigo} y {moneda_dest.codigo} "
+                f"  PRECIOS BIMONETARIOS: {moneda_base.codigo} y "
+                f"{moneda_dest.codigo} "
                 f"(Cotización {tipo_nombre}: ${cot.valor_venta:.2f})"
             )
             print(f"{'─' * 70}")
@@ -892,7 +955,9 @@ class Consola:
                 )
                 if p_dest is not None:
                     origen_txt = "Cotizado" if es_cot else "Directo"
-                    txt_dest = f"{moneda_dest.simbolo} {p_dest:.2f} ({origen_txt})"
+                    txt_dest = (
+                        f"{moneda_dest.simbolo} {p_dest:.2f} ({origen_txt})"
+                    )
                 else:
                     txt_dest = "Sin precio"
 
@@ -906,11 +971,12 @@ class Consola:
             print(f"\nError: {e}")
 
     def _exportar_precios_csv(self) -> None:
-        """Exporta los precios de los libros para todos los tipos de monedas a CSV."""
+        """Exporta los precios de los libros de todas las monedas a CSV."""
         self._mostrar_titulo("EXPORTAR PRECIOS A ARCHIVO CSV")
         try:
             ruta = self._pedir_texto(
-                "Ruta o nombre del archivo CSV (Enter para 'precios_monedas.csv'): ",
+                "Ruta o nombre del archivo CSV (Enter para "
+                "'precios_monedas.csv'): ",
                 obligatorio=False,
             )
             if not ruta:
@@ -925,19 +991,22 @@ class Consola:
                     tipos_cot[0],
                 )
                 print(
-                    f"\nTipos de cotización disponibles (defecto: [{tipo_defecto.id}] {tipo_defecto.nombre}):"
+                    f"\nTipos de cotización disponibles (defecto: "
+                    f"[{tipo_defecto.id}] {tipo_defecto.nombre}):"
                 )
                 for tc in tipos_cot:
                     print(f"  [{tc.id}] {tc.nombre}")
                 id_tipo_texto = self._pedir_texto(
-                    f"ID del tipo de cotización (Enter para '{tipo_defecto.nombre}'): ",
+                    f"ID del tipo de cotización (Enter para "
+                    f"'{tipo_defecto.nombre}'): ",
                     obligatorio=False,
                 )
                 id_tipo = int(
                     id_tipo_texto) if id_tipo_texto else tipo_defecto.id
 
             fecha = self._pedir_fecha(
-                "Fecha para cotizaciones (YYYY-MM-DD, Enter para más reciente): "
+                "Fecha para cotizaciones (YYYY-MM-DD, Enter para "
+                "más reciente): "
             )
 
             total = self._servicio_precio.exportar_precios_csv(
@@ -995,7 +1064,9 @@ class Consola:
         """Lista todo el stock."""
         stock = self._servicio_stock.leer_todos()
         self._mostrar_lista(
-            stock, lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades")
+            stock,
+            lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades",
+        )
 
     def _ver_stock_libro(self) -> None:
         """Muestra el stock de un libro."""
@@ -1054,14 +1125,18 @@ class Consola:
         """Muestra el stock sin disponibilidad."""
         stock = self._servicio_stock.sin_disponibilidad()
         self._mostrar_lista(
-            stock, lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades")
+            stock,
+            lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades",
+        )
 
     def _stock_bajo(self) -> None:
         """Muestra el stock bajo."""
         minimo = self._pedir_entero("Cantidad mínima: ", minimo=0)
         stock = self._servicio_stock.con_stock_bajo(minimo)
         self._mostrar_lista(
-            stock, lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades")
+            stock,
+            lambda s: f"[{s.id}] Libro {s.libro_id}: {s.cantidad} unidades",
+        )
 
     def _valor_inventario(self) -> None:
         """Calcula el valor del inventario."""
@@ -1123,7 +1198,10 @@ class Consola:
         cotizaciones = self._servicio_cotizacion.leer_todos()
         self._mostrar_lista(
             cotizaciones,
-            lambda c: f"[{c.id}] Tipo {c.tipo_id} - {c.fecha}: Compra {c.valor_compra} / Venta {c.valor_venta}",
+            lambda c: (
+                f"[{c.id}] Tipo {c.tipo_id} - {c.fecha}: "
+                f"Compra {c.valor_compra} / Venta {c.valor_venta}"
+            ),
         )
 
     def _ver_cotizacion(self) -> None:
@@ -1138,10 +1216,12 @@ class Consola:
             id_tipo, fecha)
         if cotizacion is None:
             print(
-                f"\nNo existe cotización para el tipo {id_tipo} en la fecha {fecha}.")
+                f"\nNo existe cotización para el tipo {id_tipo} "
+                f"en la fecha {fecha}.")
         else:
             print(
-                f"\nCotización - Tipo {cotizacion.tipo_id} - {cotizacion.fecha}")
+                f"\nCotización - Tipo {cotizacion.tipo_id} - "
+                f"{cotizacion.fecha}")
             print(f"  Valor de compra: {cotizacion.valor_compra}")
             print(f"  Valor de venta: {cotizacion.valor_venta}")
             print(f"  Spread: {cotizacion.spread}")
@@ -1153,7 +1233,10 @@ class Consola:
             id_tipo)
         self._mostrar_lista(
             cotizaciones,
-            lambda c: f"[{c.id}] {c.fecha}: Compra {c.valor_compra} / Venta {c.valor_venta}",
+            lambda c: (
+                f"[{c.id}] {c.fecha}: Compra {c.valor_compra} / "
+                f"Venta {c.valor_venta}"
+            ),
         )
 
     def _crear_cotizacion(self) -> None:
@@ -1194,7 +1277,8 @@ class Consola:
                 id_tipo, fecha)
             if cotizacion is None:
                 print(
-                    f"\nNo existe cotización para el tipo {id_tipo} en la fecha {fecha}.")
+                    f"\nNo existe cotización para el tipo {id_tipo} "
+                    f"en la fecha {fecha}.")
                 return
 
             print(f"\nValor de compra actual: {cotizacion.valor_compra}")
@@ -1224,7 +1308,8 @@ class Consola:
                     print("\nCotización eliminada exitosamente.")
                 else:
                     print(
-                        f"\nNo existe cotización para el tipo {id_tipo} en la fecha {fecha}.")
+                        f"\nNo existe cotización para el tipo {id_tipo} "
+                        f"en la fecha {fecha}.")
         except ValueError as e:
             print(f"\nError: {e}")
 
@@ -1255,14 +1340,182 @@ class Consola:
             print("Consultando cotizaciones desde la API del dólar...")
             cotizaciones = self._servicio_cotizacion.obtener_cotizaciones()
             print(
-                f"\nSe obtuvieron y registraron {len(cotizaciones)} cotizaciones exitosamente:"
+                f"\nSe obtuvieron y registraron {len(cotizaciones)} "
+                f"cotizaciones exitosamente:"
             )
             for cot in cotizaciones:
                 tipo = self._servicio_tipo_cotizacion.leer_por_id(cot.tipo_id)
                 nombre_tipo = tipo.nombre if tipo else f"Tipo {cot.tipo_id}"
                 print(
-                    f"  - {nombre_tipo:<22} Compra: ${cot.valor_compra:>8.2f} | "
+                    f"  - {nombre_tipo:<22} Compra: "
+                    f"${cot.valor_compra:>8.2f} | "
                     f"Venta: ${cot.valor_venta:>8.2f} | Fecha: {cot.fecha}"
                 )
         except ValueError as e:
             print(f"\nError al obtener cotizaciones: {e}")
+
+    # ------------------------------------------------------------------
+    # Auditoría del Sistema
+    # ------------------------------------------------------------------
+
+    def _menu_auditoria(self) -> None:
+        """Menú de consulta de la auditoría del sistema."""
+        self._mostrar_titulo("AUDITORÍA DEL SISTEMA")
+        print("  1. Ver últimos movimientos auditados")
+        print("  2. Ver todos los movimientos auditados")
+        print("  3. Filtrar movimientos por acción")
+        print("  4. Ver acciones auditadas")
+        print("  0. Volver")
+
+        opcion = input("\nSeleccione una opción: ").strip()
+
+        if opcion == "1":
+            self._ver_auditoria_reciente()
+        elif opcion == "2":
+            self._ver_auditoria_completa()
+        elif opcion == "3":
+            self._filtrar_auditoria_por_accion()
+        elif opcion == "4":
+            self._ver_acciones_auditadas()
+
+    def _ver_auditoria_reciente(self) -> None:
+        """Muestra los últimos movimientos auditados del sistema."""
+        limite = self._pedir_entero(
+            "Cantidad de movimientos a mostrar (Enter para 20): ",
+            minimo=1,
+            defecto=20,
+        )
+        registros = self._servicio_auditoria.leer_recientes(limite)
+        self._mostrar_auditoria(registros)
+
+    def _ver_auditoria_completa(self) -> None:
+        """Muestra todos los movimientos auditados del sistema."""
+        registros = self._servicio_auditoria.leer_todos()
+        self._mostrar_auditoria(registros)
+
+    def _filtrar_auditoria_por_accion(self) -> None:
+        """Muestra los movimientos auditados de una acción determinada."""
+        acciones = self._servicio_auditoria.acciones_registradas()
+        if not acciones:
+            print("\nTodavía no hay operaciones auditadas.")
+            return
+
+        print("\nAcciones auditadas:")
+        for accion in acciones:
+            print(f"  - {accion}")
+
+        accion = self._pedir_texto("Acción a consultar: ")
+        registros = self._servicio_auditoria.leer_por_accion(accion)
+        self._mostrar_auditoria(registros)
+
+    def _ver_acciones_auditadas(self) -> None:
+        """Muestra el detalle de las acciones auditadas del sistema."""
+        registros = self._servicio_auditoria.leer_todos()
+        if not registros:
+            print("\nTodavía no hay operaciones auditadas.")
+            return
+
+        resumen: dict[str, int] = {}
+        for registro in registros:
+            resumen[registro.accion] = resumen.get(registro.accion, 0) + 1
+
+        print(f"\nTotal de operaciones auditadas: {len(registros)}")
+        print(f"{'─' * 50}")
+        for accion in sorted(resumen):
+            print(f"  {accion:<28} {resumen[accion]:>5}")
+
+    def _ejecutar_scraping(self) -> None:
+        """Ejecuta el scraper de Cúspide desde la consola."""
+        self._mostrar_titulo("EJECUTAR SCRAPING")
+        try:
+            umbral = self._pedir_decimal(
+                "Diferencia de precios admitida (Enter para 0.0): ",
+                defecto=Decimal(0),
+            )
+            print("\nEjecutando scraping de Cúspide. Esto puede tardar unos minutos...")
+            resultados = ejecutar_scraper(umbral_diferencia=float(umbral))
+            print(f"\nScraping finalizado. {len(resultados)} resultado(s) obtenido(s).")
+            ruta_alertas = obtener_ruta_alertas_csv()
+            ruta_reporte = obtener_ruta_reporte_excel()
+            print(f"  - Alertas CSV: {ruta_alertas}")
+            print(f"  - Reporte Excel: {ruta_reporte}")
+        except (EOFError, KeyboardInterrupt):
+            print("\n\nOperación cancelada.")
+        except Exception as e:
+            print(f"\nError al ejecutar el scraping: {e}")
+
+    def _generar_reporte(self) -> None:
+        """Genera o analiza reportes del scraping."""
+        self._mostrar_titulo("GENERAR REPORTE")
+        print("  1. Generar reporte Excel desde última extracción")
+        print("  2. Generar reporte Excel desde alertas CSV")
+        print("  3. Leer reporte Excel generado")
+        print("  4. Descargar reporte Excel (Colab)")
+        print("  5. Analizar archivo de alertas CSV")
+        print("  0. Volver")
+
+        opcion = input("\nSeleccione una opción: ").strip()
+
+        try:
+            if opcion == "1":
+                datos = leer_reporte_excel() if os.path.exists(obtener_ruta_reporte_excel()) else []
+                if not datos:
+                    print("\nNo hay datos para generar el reporte desde extracción previa.")
+                    print("Ejecute primero 'Ejecutar scraping'.")
+                    return
+                ruta = generar_reporte_excel(datos)
+                print(f"\nReporte generado: {ruta}")
+            elif opcion == "2":
+                ruta = generar_reporte_desde_alertas_csv()
+                print(f"\nReporte generado desde alertas CSV: {ruta}")
+            elif opcion == "3":
+                datos = leer_reporte_excel()
+                if not datos:
+                    print("\nNo hay reporte para leer.")
+                    return
+                print(f"\nRegistros en reporte: {len(datos)}")
+                for fila in datos[:20]:
+                    print(f"  - {fila}")
+                if len(datos) > 20:
+                    print(f"  ... y {len(datos)-20} registro(s) más")
+            elif opcion == "4":
+                ruta = descargar_reporte_excel()
+                print(f"\nReporte listo para descarga: {ruta}")
+            elif opcion == "5":
+                ruta = obtener_ruta_alertas_csv()
+                if not os.path.exists(ruta):
+                    print("\nNo existe el archivo de alertas CSV.")
+                    print("Ejecute primero 'Ejecutar scraping'.")
+                    return
+                alertas = leer_alertas_csv(ruta)
+                resultado = resumen_estadistico_alertas(alertas)
+                print("\nAnálisis de alertas:")
+                for clave, valor in resultado.items():
+                    print(f"  - {clave}: {valor}")
+                try:
+                    ruta_descarga = descargar_archivo_alertas(ruta)
+                    print(f"\nArchivo de alertas listo para descarga: {ruta_descarga}")
+                except Exception:
+                    pass
+        except (EOFError, KeyboardInterrupt):
+            print("\n\nOperación cancelada.")
+        except Exception as e:
+            print(f"\nError al generar/analizar reporte: {e}")
+
+    def _mostrar_auditoria(self, registros: List[Auditoria]):
+        """Muestra una lista de registros de auditoría.
+
+        Args:
+            registros (List[Auditoria]): Registros a mostrar.
+        """
+        if not registros:
+            print("\nTodavía no hay operaciones auditadas.")
+            return
+
+        print(f"\n{'─' * 70}")
+        print(f"  HISTORIAL DE AUDITORÍA ({len(registros)} registro(s))")
+        print(f"{'─' * 70}")
+        for registro in registros:
+            fecha = registro.fecha.strftime("%Y-%m-%d %H:%M:%S")
+            print(f"  [{registro.id}] {fecha} | {registro.accion}")
+            print(f"        {registro.detalles}")

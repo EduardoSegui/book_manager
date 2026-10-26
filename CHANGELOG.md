@@ -1,5 +1,78 @@
 # Registro de Cambios (Changelog)
 
+## Dia 23/10/2026
+
+## [Ejercicio 07]
+- Incorporación en el menú principal de la consola de las opciones `9. Ejecutar scraping`, `10. Generar reporte` y `11. Ver historial de auditoría`, integrando el scraper, los reportes y la auditoría en la operación normal del sistema.
+- Implementación de `_ejecutar_scraping` (`console.py`), que solicita la diferencia de precios admitida (con valor por defecto `0.0`), ejecuta el scraper de Cúspide mediante `ejecutar_scraper`, informa la cantidad de resultados obtenidos y muestra las rutas del CSV de alertas y del reporte Excel generados.
+- Implementación de `_generar_reporte` (`console.py`) con un submenú para generar el reporte Excel desde la última extracción o desde el CSV de alertas, leer un reporte ya generado, descargarlo en Google Colab y analizar el archivo de alertas mediante `resumen_estadistico_alertas`.
+- Ampliación de `_pedir_decimal` para admitir un valor por defecto cuando el usuario presiona Enter, reutilizado en la configuración del umbral de scraping.
+- Actualización de la opción de auditoría del sistema al número `11` del menú principal, manteniendo la consulta de acciones registradas y del historial reciente.
+- Manejo de cancelación limpia (`EOFError`/`KeyboardInterrupt`) y de errores en las nuevas opciones, mostrando mensajes claros al usuario sin interrumpir la consola.
+- Corrección de la firma de `_mostrar_auditoria` para que no declare un tipo de retorno inexistente.
+
+## Dia 22/10/2026
+
+## [Ejercicio 06]
+- Creación del decorador `auditar` (`src/book_manager/audit/auditoria.py`) que registra en la tabla de auditoría cada operación ejecutada por el sistema, con su acción, su fecha y el detalle de la operación (servicio, datos involucrados y resultado).
+- Implementación de la clase `Auditor` como punto único de registro, que persiste la auditoría mediante `RepositorioAuditoria` e informa por pantalla, sin interrumpir la operación auditada, si el registro no puede persistirse.
+- Creación de la entidad `Auditoria` (`entities.py`) y del modelo ORM `Auditoria` (`models.py`), que dan lugar a la tabla `auditorias` con las columnas `accion`, `fecha` y `detalles`.
+- Creación del repositorio `RepositorioAuditoria` y del servicio `ServicioAuditoria`, con los métodos `registrar`, `leer_todos`, `leer_recientes`, `leer_por_accion`, `acciones_registradas` y `eliminar`.
+- Decoración de las operaciones de los servicios (`crear`, `actualizar`, `eliminar`, `dar_de_baja`, `dar_de_alta`, `ingresar`, `egresar`, `cotizar`, `exportar_csv` y `obtener`) para que toda alta, modificación, baja y operación relevante del sistema quede auditada.
+- Auditoría de la ejecución del scraper de Cúspide (`scraper/runner.py`) y de la precarga de datos desde los archivos CSV (`main.py`).
+- Registro de las operaciones fallidas con el mensaje de error, conservando la excepción original para que la consola muestre el error al usuario.
+- Incorporación de la consulta del historial de auditoría en la consola (opción 9. Auditoría del Sistema) y del servicio de auditoría en la composición del sistema (`main.py`).
+- Incorporación de los alias `GeneroModel`, `EditorialModel`, `MonedaModel`, `TipoCotizacionModel`, `LibroModel`, `PrecioModel`, `StockModel`, `CotizacionDolarModel` y `AuditoriaModel` en `models.py`, para permitir la importación de los modelos con el sufijo `Model` que usa la plantilla de validación del TP.
+- Mejora de la consola: los submenúes cierran de forma limpia ante `EOFError`/`KeyboardInterrupt` y la cantidad de movimientos a mostrar admite el valor por defecto.
+
+## Dia 21/10/2026
+
+## [Ejercicio 05]
+- Implementación del módulo `reporte_excel.py` (`src/book_manager/reportes/`) para generar el reporte de comparación de precios en formato Excel, con los campos Libro, Precio interno, Precio web, Diferencia y Fecha de extracción.
+- Generación del archivo `reportes/reporte_precios.xlsx` en cada ejecución del scraper, con encabezado con formato, anchos de columna ajustados, formato de moneda y de fecha, filtros y panel de celdas inmovilizado.
+- Implementación del pipeline `ReporteExcelPipeline` (`pipelines.py`), que recolecta los precios comparados de cada publicación scrapeada y escribe el reporte al cerrar la araña.
+- Reporte generable de forma independiente a partir de los items scrapeados (`generar_reporte_excel`) o del archivo CSV de alertas del Ejercicio 04 (`generar_reporte_desde_alertas_csv`).
+- Funciones de lectura (`leer_reporte_excel`) y descarga (`descargar_reporte_excel`) del reporte, con soporte para la descarga en Google Colab mediante files.download.
+- Incorporación de `openpyxl==3.1.5` en `requirements.txt` y del artefacto generado en `.gitignore`.
+
+## Dia 21/10/2026
+
+## [Ejercicio 04]
+- Comparación del precio interno contra el precio web de cada publicación scrapeada, con diferencia en pesos, porcentaje de diferencia y tipificación de la alerta (PRECIO_WEB_MAYOR, PRECIO_WEB_MENOR, PRECIO_IGUAL, SIN_PRECIO_INTERNO).
+- Solicitud de la diferencia de precios admitida al usuario antes de cada ejecución del scraper, con validación del valor ingresado.
+- Generación del archivo CSV de alertas (reportes/alertas_precios.csv) en cada ejecución del scraper, con precio interno, precio web, diferencia, porcentaje y umbral configurado.
+- Análisis del CSV de alertas: total de alertas, cantidad de casos con precio web mayor, menor o igual, diferencia promedio, diferencia máxima y libros con mayor brecha de precio.
+- Descarga del archivo CSV de alertas para su análisis (en Colab, mediante files.download).
+- Corrección del pipeline de alertas, que no se ejecutaba por el orden de prioridad de las configuraciones de Scrapy y por lo tanto nunca generaba el CSV. 
+
+## Dia 21/10/2026
+
+## [Ejercicio 03]
+- Implementación de la araña de scraping `CuspideSpider` (`cuspide_spider.py`) con Scrapy para la extracción de precios, URLs de imágenes, formas de pago y descripción detallada desde el sitio web de Cúspide (`cuspide.com`).
+- Restricción estricta de búsqueda únicamente a los libros del catálogo interno, limitando a un máximo de 10 los primeros resultados por búsqueda de título.
+- Implementación de `CuspideItem` (`items.py`) y del loader personalizado `CuspideItemLoader` (`loaders.py`) utilizando procesadores de entrada y salida (`MapCompose`, `TakeFirst`) para la normalización de precios en float, URLs absolutas de imagen y formateo de medios de pago.
+- Implementación de `CuspideValidacionPipeline` (`pipelines.py`) para validación y saneamiento de items, combinando formas de pago y precio, y calculando discrepancias respecto a los precios internos.
+- Implementación del ejecutor programático `ejecutar_scraper` (`runner.py`) mediante aislamiento en subprocesos (`multiprocessing`), garantizando compatibilidad con Scrapy 2.19 y ejecución segura en Jupyter Notebooks sin conflictos de reactor Twisted.
+- Incorporación de `scrapy==2.19.0` en `requirements.txt`.
+- Integración y verificación de la celda de ejecución del Ejercicio 03 en el notebook `03_Book_Manager_Grupo_XX.ipynb`.
+
+## Dia 20/10/2026
+
+## [Ejercicio 02]
+- Implementación de la función `cargar_datos_sql` en `migrations.py` para la lectura y ejecución secuencial de sentencias SQL desde la carpeta `migrations/sql/` hacia la base de datos relacional con SQLAlchemy.
+- Procesamiento y ejecución transaccional atómica con `ConexionDB.sesion()`, asegurando limpieza previa (`_vaciar_tablas`) e idempotencia en la carga.
+- Implementación de la función auxiliar `_extraer_sentencias_sql` para omitir comentarios y separar comandos `INSERT` individuales delimitados por punto y coma.
+- Ajuste y sincronización automática de secuencias autoincrementales (`setval`) en PostgreSQL tras la inserción con claves primarias explícitas.
+- Manejo robusto de excepciones ante fallas de archivos o sintaxis SQL con mensajes descriptivos (`ValueError`) y rollback automático.
+- Integración e invocación de `cargar_datos_sql` en la celda del Ejercicio 02 dentro del notebook `03_Book_Manager_Grupo_XX.ipynb`, verificando la inserción de las tablas `generos`, `editoriales`, `monedas`, `tipos_cotizacion`, `libros`, `libro_genero`, `precios`, `stock` y `cotizaciones_dolar`.
+
+## Dia 19/10/2026
+
+## [Ejercicio 01]
+- Creación y configuración de la rama de trabajo `Sprint_3` a partir de la rama `Sprint_2`.
+- Creación de los directorios `src/book_manager/scraper/` y `src/book_manager/reportes/` para incorporar la estructura requerida del scraper (Scrapy) y reportes generados.
+- Incorporación de archivos `__init__.py` y `.gitkeep` para habilitar el empaquetado como módulos de Python y el versionado en Git.
+
 ## Dia 14/10/2026
 
 ## [Integración Supabase]

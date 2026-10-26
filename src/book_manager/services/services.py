@@ -4,6 +4,10 @@
 Ejercicio 04: Clases responsables de la lógica de negocio que se aplica a cada
 operación (CRUD) de las entidades. Los repositorios se inyectan por constructor
 y la persistencia se delega a la capa de repositorios.
+
+Sprint 3 - Ejercicio 06: Las operaciones de los servicios se decoran con
+``auditar`` para que toda alta, modificación, baja y operación relevante del
+sistema quede registrada en la tabla de auditoría (acción, fecha y detalles).
 """
 
 import abc
@@ -17,7 +21,9 @@ from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar
 
 from dotenv import load_dotenv
 
+from book_manager.audit.auditoria import auditar
 from book_manager.entities.entities import (
+    Auditoria,
     CotizacionDolar,
     Editorial,
     EntidadBase,
@@ -216,6 +222,7 @@ class ServicioBase(IServicio[T]):
         """Inicializa el servicio con el repositorio de su entidad."""
         self._repositorio = repositorio
 
+    @auditar("crear")
     def crear(self, entidad: T) -> T:
         """Crea la entidad asignando ID y validando unicidad y reglas."""
         _asignar_id_pendiente(entidad, self._repositorio.leer_todos())
@@ -239,6 +246,7 @@ class ServicioBase(IServicio[T]):
                 return entidad
         return None
 
+    @auditar("actualizar")
     def actualizar(self, entidad: T) -> T:
         """Actualiza la entidad validando su existencia, unicidad y reglas."""
         self._exigir_existente(entidad.id)
@@ -246,6 +254,7 @@ class ServicioBase(IServicio[T]):
         self._validar_actualizacion(entidad)
         return self._repositorio.actualizar(entidad)
 
+    @auditar("eliminar")
     def eliminar(self, id: int) -> bool:
         """Elimina la entidad validando que no esté en uso."""
         self._validar_eliminacion(self._exigir_existente(id))
@@ -302,7 +311,8 @@ class ServicioGenero(ServicioBase[Genero]):
                   if entidad.id in libro.generos_ids]
         if en_uso:
             raise ValueError(
-                f"{self._etiqueta.capitalize()} '{entidad.nombre}' no se puede "
+                f"{self._etiqueta.capitalize()} '{entidad.nombre}' no "
+                f"se puede "
                 f"eliminar porque está asociado a {len(en_uso)} libro(s): "
                 f"{_resumen(en_uso)}."
             )
@@ -330,7 +340,8 @@ class ServicioEditorial(ServicioBase[Editorial]):
                   if libro.editorial_id == entidad.id]
         if en_uso:
             raise ValueError(
-                f"{self._etiqueta.capitalize()} '{entidad.nombre}' no se puede "
+                f"{self._etiqueta.capitalize()} '{entidad.nombre}' no "
+                f"se puede "
                 f"eliminar porque publica {len(en_uso)} libro(s): "
                 f"{_resumen(en_uso)}."
             )
@@ -352,7 +363,7 @@ class ServicioMoneda(ServicioBase[Moneda]):
 
 
 class ServicioTipoCotizacion(ServicioBase[TipoCotizacion]):
-    """Servicio con la lógica de negocio de los tipos de cotización del dólar."""
+    """Servicio con la lógica de los tipos de cotización del dólar."""
 
     _etiqueta = "el tipo de cotización"
     _campos_unicos = ("nombre",)
@@ -362,7 +373,7 @@ class ServicioTipoCotizacion(ServicioBase[TipoCotizacion]):
         repositorio: IRepositorio[TipoCotizacion],
         repositorio_cotizacion: IRepositorioCotizacionDolar,
     ) -> None:
-        """Inicializa el servicio con los repositorios de tipo y de cotización."""
+        """Inicializa el servicio con los repositorios de tipo y cotización."""
         super().__init__(repositorio)
         self._repositorio_cotizacion = repositorio_cotizacion
 
@@ -372,7 +383,8 @@ class ServicioTipoCotizacion(ServicioBase[TipoCotizacion]):
             entidad.id)
         if cotizaciones:
             raise ValueError(
-                f"El tipo de cotización '{entidad.nombre}' no se puede eliminar "
+                f"El tipo de cotización '{entidad.nombre}' no se puede "
+                f"eliminar "
                 f"porque tiene {len(cotizaciones)} cotización(es) cargada(s)."
             )
 
@@ -392,7 +404,7 @@ class ServicioLibro(ServicioBase[Libro]):
         repositorio_precio: IRepositorio[Precio],
         repositorio_stock: IRepositorioStock,
     ) -> None:
-        """Inicializa el servicio con los repositorios que valida y consulta."""
+        """Inicializa el servicio con los repositorios de validación."""
         super().__init__(repositorio)
         self._repositorio_genero = repositorio_genero
         self._repositorio_editorial = repositorio_editorial
@@ -412,20 +424,29 @@ class ServicioLibro(ServicioBase[Libro]):
 
     def leer_por_isbn(self, isbn: str) -> Optional[Libro]:
         """Busca un libro por su ISBN, con o sin guiones."""
-        return self.leer_por_campo("isbn", isbn.replace("-", "").replace(" ", ""))
+        return self.leer_por_campo(
+            "isbn", isbn.replace("-", "").replace(" ", "")
+        )
 
     def leer_activos(self) -> List[Libro]:
         """Lista los libros dados de alta en el catálogo."""
-        return [libro for libro in self._repositorio.leer_todos() if libro.activo]
+        return [
+            libro for libro in self._repositorio.leer_todos() if libro.activo
+        ]
 
     def leer_inactivos(self) -> List[Libro]:
         """Lista los libros dados de baja del catálogo."""
-        return [libro for libro in self._repositorio.leer_todos() if not libro.activo]
+        return [
+            libro for libro in self._repositorio.leer_todos()
+            if not libro.activo
+        ]
 
+    @auditar("dar_de_baja")
     def dar_de_baja(self, id: int) -> Libro:
         """Saca un libro del catálogo conservando su historial."""
         return self._cambiar_estado(id, activar=False)
 
+    @auditar("dar_de_alta")
     def dar_de_alta(self, id: int) -> Libro:
         """Incorpora un libro al catálogo."""
         return self._cambiar_estado(id, activar=True)
@@ -456,16 +477,21 @@ class ServicioLibro(ServicioBase[Libro]):
         """Impide borrar un libro que tiene precios o stock asociado."""
         precios = [precio for precio in self._repositorio_precio.leer_todos()
                    if precio.libro_id == entidad.id]
-        if precios or self._repositorio_stock.leer_por_libro(entidad.id) is not None:
+        stock = self._repositorio_stock.leer_por_libro(entidad.id)
+        if precios or stock is not None:
             raise ValueError(
-                f"El libro '{entidad.titulo}' no se puede eliminar porque tiene "
-                f"{len(precios)} precio(s) y/o stock asociado. Si solo se quiere "
+                f"El libro '{entidad.titulo}' no se puede eliminar "
+                f"porque tiene {len(precios)} precio(s) y/o stock asociado. "
+                f"Si solo se quiere "
                 "sacarlo del catálogo, utilice la baja lógica."
             )
 
     def _validar_referencias(self, entidad: Libro) -> None:
         """Valida que la editorial y los géneros referenciados existan."""
-        if self._repositorio_editorial.leer_por_id(entidad.editorial_id) is None:
+        editorial = self._repositorio_editorial.leer_por_id(
+            entidad.editorial_id
+        )
+        if editorial is None:
             raise ValueError(
                 f"No existe la editorial con el ID {entidad.editorial_id}."
             )
@@ -494,28 +520,33 @@ class ServicioCotizacionDolar:
     convertir valores entre dólares y pesos.
     """
 
+    _etiqueta = "la cotización"
+
     def __init__(
         self,
         repositorio: IRepositorioCotizacionDolar,
         repositorio_tipo: IRepositorio[TipoCotizacion],
         repositorio_moneda: IRepositorio[Moneda],
     ) -> None:
-        """Inicializa el servicio con los repositorios de cotización, tipo y moneda."""
+        """Inicializa el servicio con sus repositorios de cotización y tipo."""
         self._repositorio = repositorio
         self._repositorio_tipo = repositorio_tipo
         self._repositorio_moneda = repositorio_moneda
 
+    @auditar("crear")
     def crear(self, cotizacion: CotizacionDolar) -> CotizacionDolar:
         """Crea una cotización validando el tipo de cotización referenciado."""
         _asignar_id_pendiente(cotizacion, self.leer_todos())
         self._exigir_existente(cotizacion.tipo_id)
         return self._repositorio.crear(cotizacion)
 
+    @auditar("actualizar")
     def actualizar(self, cotizacion: CotizacionDolar) -> CotizacionDolar:
         """Actualiza la cotización cargada para un tipo y una fecha."""
         self._exigir_existente(cotizacion.tipo_id)
         return self._repositorio.actualizar(cotizacion)
 
+    @auditar("eliminar")
     def eliminar(self, tipo_id: int, fecha: date) -> bool:
         """Elimina la cotización de un tipo en una fecha determinada."""
         self._exigir_existente(tipo_id)
@@ -537,7 +568,9 @@ class ServicioCotizacionDolar:
             key=lambda cotizacion: cotizacion.fecha,
         )
 
-    def leer_por_tipo_y_fecha(self, tipo_id: int, fecha: date) -> Optional[CotizacionDolar]:
+    def leer_por_tipo_y_fecha(
+        self, tipo_id: int, fecha: date
+    ) -> Optional[CotizacionDolar]:
         """Devuelve la cotización de un tipo en una fecha específica."""
         self._exigir_existente(tipo_id)
         for cotizacion in self._repositorio.leer_historico_por_tipo(tipo_id):
@@ -567,7 +600,8 @@ class ServicioCotizacionDolar:
         cotizacion = _cotizacion_aplicable(self._repositorio, tipo_id, fecha)
         if cotizacion is None:
             raise ValueError(
-                f"El tipo de cotización {tipo_id} no tiene cotizaciones cargadas."
+                f"El tipo de cotización {tipo_id} no tiene cotizaciones "
+                f"cargadas."
             )
         return _convertir(valor, cotizacion, origen.codigo, destino.codigo)
 
@@ -591,6 +625,7 @@ class ServicioCotizacionDolar:
         raise ValueError(
             f"La moneda '{codigo}' no está registrada en el sistema.")
 
+    @auditar("obtener")
     def obtener_cotizaciones(
         self, api_url: Optional[str] = None
     ) -> List[CotizacionDolar]:
@@ -637,7 +672,8 @@ class ServicioCotizacionDolar:
 
         if not isinstance(datos, list):
             raise ValueError(
-                "La respuesta de la API del dólar debe ser una lista de cotizaciones."
+                "La respuesta de la API del dólar debe ser una lista "
+                "de cotizaciones."
             )
 
         registradas: List[CotizacionDolar] = []
@@ -756,7 +792,7 @@ class ServicioPrecio(ServicioBase[Precio]):
         repositorio_moneda: IRepositorio[Moneda],
         repositorio_cotizacion: IRepositorioCotizacionDolar,
     ) -> None:
-        """Inicializa el servicio con los repositorios que valida y consulta."""
+        """Inicializa el servicio con los repositorios de validación."""
         super().__init__(repositorio)
         self._repositorio_libro = repositorio_libro
         self._repositorio_moneda = repositorio_moneda
@@ -773,12 +809,17 @@ class ServicioPrecio(ServicioBase[Precio]):
         )
         precios = [precio for precio in self._repositorio.leer_todos()
                    if precio.libro_id == libro_id]
-        return sorted(precios, key=lambda precio: (precio.moneda_id, precio.fecha))
+        return sorted(
+            precios, key=lambda precio: (precio.moneda_id, precio.fecha)
+        )
 
-    def precio_vigente(self, libro_id: int, moneda_id: int) -> Optional[Precio]:
+    def precio_vigente(
+        self, libro_id: int, moneda_id: int
+    ) -> Optional[Precio]:
         """Devuelve el último precio cargado de un libro en una moneda."""
         return _precio_vigente(self._repositorio, libro_id, moneda_id)
 
+    @auditar("cotizar")
     def cotizar(
         self,
         libro_id: int,
@@ -789,7 +830,7 @@ class ServicioPrecio(ServicioBase[Precio]):
     ) -> Optional[Decimal]:
         """Cotiza el precio vigente de un libro en otra moneda.
 
-        Devuelve None si el libro no tiene precio cargado en la moneda de origen.
+        Devuelve None si el libro no tiene precio en la moneda de origen.
         """
         origen = self._leer_moneda(moneda_origen_id)
         destino = self._leer_moneda(moneda_destino_id)
@@ -800,9 +841,12 @@ class ServicioPrecio(ServicioBase[Precio]):
             self._repositorio_cotizacion, tipo_id, fecha)
         if cotizacion is None:
             raise ValueError(
-                f"El tipo de cotización {tipo_id} no tiene cotizaciones cargadas."
+                f"El tipo de cotización {tipo_id} no tiene cotizaciones "
+                f"cargadas."
             )
-        return _convertir(precio.valor, cotizacion, origen.codigo, destino.codigo)
+        return _convertir(
+            precio.valor, cotizacion, origen.codigo, destino.codigo
+        )
 
     def lista_precios_bimonetaria(
         self,
@@ -810,7 +854,7 @@ class ServicioPrecio(ServicioBase[Precio]):
         tipo_id: int,
         fecha: Optional[date] = None,
     ) -> List[Dict[str, Any]]:
-        """Genera la lista de precios bimonetaria de los libros (pesos y otra moneda).
+        """Genera la lista de precios bimonetaria de los libros.
 
         Calcula para cada libro su precio vigente en pesos (ARS) y en la moneda
         destino seleccionada, cotizando mediante el tipo de cotización si no
@@ -832,7 +876,8 @@ class ServicioPrecio(ServicioBase[Precio]):
         destino = self._leer_moneda(moneda_destino_id)
         if destino.codigo == CODIGO_MONEDA_BASE:
             raise ValueError(
-                f"La moneda de comparación debe ser distinta de {CODIGO_MONEDA_BASE}."
+                f"La moneda de comparación debe ser distinta de "
+                f"{CODIGO_MONEDA_BASE}."
             )
 
         moneda_base = next(
@@ -842,7 +887,8 @@ class ServicioPrecio(ServicioBase[Precio]):
         )
         if moneda_base is None:
             raise ValueError(
-                f"No se encuentra registrada la moneda base {CODIGO_MONEDA_BASE}."
+                f"No se encuentra registrada la moneda base "
+                f"{CODIGO_MONEDA_BASE}."
             )
 
         cotizacion = _cotizacion_aplicable(
@@ -850,7 +896,8 @@ class ServicioPrecio(ServicioBase[Precio]):
         )
         if cotizacion is None:
             raise ValueError(
-                f"El tipo de cotización {tipo_id} no tiene cotizaciones disponibles."
+                f"El tipo de cotización {tipo_id} no tiene cotizaciones "
+                f"disponibles."
             )
 
         filas: List[Dict[str, Any]] = []
@@ -865,7 +912,10 @@ class ServicioPrecio(ServicioBase[Precio]):
             if valor_destino is None and valor_base is not None:
                 try:
                     valor_destino = _convertir(
-                        valor_base, cotizacion, moneda_base.codigo, destino.codigo
+                        valor_base,
+                        cotizacion,
+                        moneda_base.codigo,
+                        destino.codigo,
                     )
                     es_cotizado = True
                 except ValueError:
@@ -882,15 +932,16 @@ class ServicioPrecio(ServicioBase[Precio]):
             })
         return filas
 
+    @auditar("exportar_csv")
     def exportar_precios_csv(
         self,
         ruta_archivo: str,
         tipo_id: Optional[int] = None,
         fecha: Optional[date] = None,
     ) -> int:
-        """Exporta los precios vigentes de los libros para todas las monedas a un archivo CSV.
+        """Exporta los precios vigentes de los libros a un archivo CSV.
 
-        Incluye tanto los precios directos como los calculados mediante conversión
+        Incluye los precios directos y los calculados por conversión
         de cotización si se especifica el tipo de cotización.
 
         Args:
@@ -1026,6 +1077,8 @@ class ServicioStock:
     precios vigentes y la cotización del dólar, permite valorar el inventario.
     """
 
+    _etiqueta = "el stock"
+
     def __init__(
         self,
         repositorio: IRepositorioStock,
@@ -1041,6 +1094,7 @@ class ServicioStock:
         self._repositorio_moneda = repositorio_moneda
         self._repositorio_cotizacion = repositorio_cotizacion
 
+    @auditar("crear")
     def crear(self, stock: Stock) -> Stock:
         """Crea un registro de stock validando el libro referenciado."""
         _asignar_id_pendiente(stock, self.leer_todos())
@@ -1060,11 +1114,13 @@ class ServicioStock:
                 registros.append(stock)
         return registros
 
+    @auditar("actualizar")
     def actualizar(self, stock: Stock) -> Stock:
         """Actualiza el stock de un libro validando su existencia."""
         self._exigir_libro(stock.libro_id)
         return self._repositorio.actualizar(stock)
 
+    @auditar("eliminar")
     def eliminar(self, libro_id: int) -> bool:
         """Elimina el stock de un libro que ya no tiene unidades disponibles.
 
@@ -1085,6 +1141,7 @@ class ServicioStock:
             )
         return self._repositorio.eliminar(libro_id)
 
+    @auditar("ingresar")
     def ingresar(self, libro_id: int, cantidad: int) -> Stock:
         """Registra el stock de un libro o incrementa el existente.
 
@@ -1100,6 +1157,7 @@ class ServicioStock:
         stock.ajustar_cantidad(cantidad)
         return self._repositorio.actualizar(stock)
 
+    @auditar("egresar")
     def egresar(self, libro_id: int, cantidad: int) -> Stock:
         """Descuenta unidades del stock de un libro.
 
@@ -1172,6 +1230,88 @@ class ServicioStock:
         if cantidad <= 0:
             raise ValueError(
                 f"La cantidad a {operacion} debe ser mayor a cero.")
+
+
+# --- Servicio de auditoría ---
+
+class ServicioAuditoria:
+    """Servicio de registro y consulta de la auditoría del sistema.
+
+    Sprint 3 - Ejercicio 06: La tabla de auditoría registra la acción
+    ejecutada, la fecha del hecho y el detalle de cada operación auditada.
+    Este servicio permite registrar operaciones de forma explícita y consultar
+    el historial de auditoría del sistema.
+    """
+
+    _etiqueta = "la auditoría"
+
+    def __init__(self, repositorio: IRepositorio[Auditoria]) -> None:
+        """Inicializa el servicio con el repositorio de auditoría."""
+        self._repositorio = repositorio
+
+    def registrar(self, accion: str, detalles: str = "") -> Auditoria:
+        """Registra una operación en la tabla de auditoría.
+
+        Args:
+            accion (str): Acción auditada (por ejemplo: "crear_genero").
+            detalles (str): Detalle de la operación auditada.
+
+        Returns:
+            Auditoria: Registro de auditoría creado.
+        """
+        auditoria = Auditoria(id=0, accion=accion, detalles=detalles)
+        return self._repositorio.crear(auditoria)
+
+    def leer_todos(self) -> List[Auditoria]:
+        """Lista todos los registros de auditoría ordenados por fecha."""
+        registros = self._repositorio.leer_todos()
+        return sorted(registros, key=lambda registro: (registro.fecha,
+                                                       registro.id))
+
+    def leer_recientes(self, limite: int = 20) -> List[Auditoria]:
+        """Lista los registros de auditoría más recientes.
+
+        Args:
+            limite (int): Cantidad máxima de registros a devolver.
+
+        Returns:
+            List[Auditoria]: Registros más recientes, del más nuevo al más
+                antiguo.
+        """
+        if limite < 1:
+            raise ValueError("El límite debe ser mayor a cero.")
+        return list(reversed(self.leer_todos()))[:limite]
+
+    def leer_por_accion(self, accion: str) -> List[Auditoria]:
+        """Lista los registros de auditoría de una acción determinada.
+
+        Args:
+            accion (str): Acción buscada (sin distinguir mayúsculas).
+
+        Returns:
+            List[Auditoria]: Registros que corresponden a la acción.
+        """
+        clave = _normalizar_texto(accion)
+        return [
+            registro for registro in self.leer_todos()
+            if _normalizar_texto(registro.accion) == clave
+        ]
+
+    def acciones_registradas(self) -> List[str]:
+        """Lista las acciones distintas registradas en la auditoría."""
+        acciones = {registro.accion for registro in self.leer_todos()}
+        return sorted(acciones)
+
+    def eliminar(self, id: int) -> bool:
+        """Elimina un registro de auditoría por su ID.
+
+        Args:
+            id (int): ID del registro a eliminar.
+
+        Returns:
+            bool: True si el registro fue eliminado, False si no existía.
+        """
+        return self._repositorio.eliminar(id)
 
 
 # --- Funciones de conveniencia a nivel de módulo ---

@@ -4,11 +4,17 @@
 Ejercicio 07: Crear el archivo main.py que se encarga de ejecutar el sistema.
 Se encargar de armar la composición del sistema (repositorios, servicios y
 consola) y de ponerlo en marcha.
+
+Sprint 3 - Ejercicio 06: La composición incluye el repositorio de auditoría,
+que se inyecta en el auditor utilizado por el decorador ``auditar`` para que
+todas las operaciones del sistema queden registradas.
 """
 
+from book_manager.audit.auditoria import configurar_auditor, obtener_auditor
 from book_manager.database.connection import ConexionDB
 from book_manager.preload_data.preload_data import cargar_todos_los_datos
 from book_manager.repositories.repositories import (
+    RepositorioAuditoria,
     RepositorioCotizacionDolar,
     RepositorioEditorial,
     RepositorioGenero,
@@ -19,6 +25,7 @@ from book_manager.repositories.repositories import (
     RepositorioTipoCotizacion,
 )
 from book_manager.services.services import (
+    ServicioAuditoria,
     ServicioCotizacionDolar,
     ServicioEditorial,
     ServicioGenero,
@@ -42,6 +49,7 @@ def _crear_repositorios() -> dict:
         "precio": RepositorioPrecio(),
         "stock": RepositorioStock(),
         "cotizacion": RepositorioCotizacionDolar(),
+        "auditoria": RepositorioAuditoria(),
     }
 
 
@@ -81,6 +89,7 @@ def _crear_servicios(repos: dict) -> Consola:
             repos["tipo_cotizacion"],
             repos["moneda"],
         ),
+        servicio_auditoria=ServicioAuditoria(repos["auditoria"]),
     )
 
 
@@ -93,6 +102,7 @@ def main(import_default_data: bool = True) -> None:
     """
     ConexionDB.crear_tablas()
     repos = _crear_repositorios()
+    configurar_auditor(repos["auditoria"])
 
     if import_default_data:
         resultados = cargar_todos_los_datos(
@@ -109,6 +119,10 @@ def main(import_default_data: bool = True) -> None:
         print(f"Datos de precarga cargados: {total} registros en total.")
         for entidad, cantidad in resultados.items():
             print(f"  - {entidad}: {cantidad}")
+        obtener_auditor().registrar(
+            "precargar_datos",
+            f"operacion=precargar_datos | resultado=OK | registros={total}",
+        )
 
     try:
         _crear_servicios(repos).ejecutar()
